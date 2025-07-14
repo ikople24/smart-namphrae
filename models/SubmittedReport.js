@@ -27,7 +27,7 @@ const SubmittedReportSchema = new mongoose.Schema({
   },
   officer: {
     type: String,
-    default: '',
+    default: 'on',
   },
   updatedAt: {
     type: Date,

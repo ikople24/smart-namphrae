@@ -1,4 +1,3 @@
-//page/status/index.jsx
 import CardModalDetail from "@/components/CardModalDetail";
 import { useEffect, useState } from "react";
 import useComplaintStore from "@/stores/useComplaintStore";
@@ -10,19 +9,53 @@ const StatusPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [modalData, setModalData] = useState(null);
+  const currentBuddhistYear = new Date().getFullYear() + 543;
+  const [activeYear, setActiveYear] = useState(currentBuddhistYear.toString());
+  const [localComplaints, setLocalComplaints] = useState([]);
 
   useEffect(() => {
-    fetchComplaints("ดำเนินการเสร็จสิ้น").then(() => {
-      //console.log("✅ Complaints (done):", complaints);
-    });
-  }, []);
+    if (activeYear === "2567") {
+      // กรณี collection พิเศษ: fetch API โดยตรง
+      fetch("/api/submittedreports_2024")
+        .then((res) => res.json())
+        .then((data) => setLocalComplaints(data))
+        .catch((err) => console.error("โหลดข้อมูล 2567 ผิดพลาด:", err));
+    } else {
+      // กรณีปกติ: ใช้ store
+      fetchComplaints("ดำเนินการเสร็จสิ้น", "submittedreports");
+    }
+  }, [activeYear]);
 
-  const paginatedComplaints = [...complaints]
+  const dataSource = Array.isArray(activeYear === "2567" ? localComplaints : complaints)
+    ? (activeYear === "2567" ? localComplaints : complaints)
+    : [];
+
+  const paginatedComplaints = [...dataSource]
+    .filter((item) => {
+      const year = new Date(item.createdAt).getFullYear();
+      return activeYear === "2567" ? year === 2024 : year === 2025;
+    })
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <>
+      <div role="tablist" className="tabs tabs-box justify-center mb-4">
+        <button
+          role="tab"
+          className={`tab ${activeYear === "2567" ? "tab-active" : ""}`}
+          onClick={() => setActiveYear("2567")}
+        >
+          ปี 2567
+        </button>
+        <button
+          role="tab"
+          className={`tab ${activeYear === "2568" ? "tab-active" : ""}`}
+          onClick={() => setActiveYear("2568")}
+        >
+          ปี 2568
+        </button>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 py-4 w-full max-w-4xl mx-auto min-h-screen items-stretch">
         {paginatedComplaints.map((item, index) => (
           <div key={index} className="h-full">
