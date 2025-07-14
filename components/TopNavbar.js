@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 import { UserButton, useUser, SignInButton } from "@clerk/nextjs";
 import AdminDropdownMenu from "./AdminDropdownMenu";
 
@@ -33,10 +34,14 @@ const TopNavbar = () => {
           </>
         ) : (
           <SignInButton mode="modal">
-            <button
-              className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center hover:ring-2 hover:ring-indigo-400 transition"
-            >
-              <span className="sr-only">Sign in</span>
+            <button className="hover:ring-2 hover:ring-indigo-400 transition rounded-full overflow-hidden">
+              <Image
+                src="/icons/icon-192x192.png"
+                alt="Sign in"
+                width={40}
+                height={40}
+                className="rounded-full object-cover"
+              />
             </button>
           </SignInButton>
         )}
