@@ -4,6 +4,7 @@ import { useMenuStore } from "@/stores/useMenuStore";
 import { useProblemOptionStore } from "@/stores/useProblemOptionStore";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import CardAssignment from "./CardAssignment";
 import CardOfficail from "./CardOfficail";
 import SatisfactionChart from "./SatisfactionChart";
 import { useUser } from "@clerk/nextjs";
@@ -177,6 +178,7 @@ export default function CardModalDetail({ modalData, onClose }) {
               </div>
             </div>
               <CardOfficail probId={modalData?._id} />
+              <CardAssignment probId={modalData?._id} />
               <SatisfactionChart complaintId={modalData._id} />
             <div className="mt-4 text-center">
               <button
