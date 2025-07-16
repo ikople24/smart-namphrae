@@ -10,8 +10,10 @@ import "swiper/css/autoplay";
 import { Autoplay } from "swiper/modules";
 import CardModalDetail from "@/components/CardModalDetail";
 import { ChevronDown } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
 
 export default function ComplaintListPage() {
+  const { user } = useUser();
   const { complaints, fetchComplaints } = useComplaintStore();
   const { menu, fetchMenu } = useMenuStore();
   const { problemOptions, fetchProblemOptions } = useProblemOptionStore();
@@ -53,7 +55,10 @@ export default function ComplaintListPage() {
                 return (
                 <div
                   key={item._id}
-                  onClick={() => setModalData(item)}
+                  onClick={() => {
+                    const role = user?.publicMetadata?.role || "user";
+                    setModalData({ ...item, userRole: role });
+                  }}
                   className="text-left w-full cursor-pointer"
                 >
                   <div className="card w-full bg-white shadow-md overflow-hidden flex flex-col md:flex-row h-[360px] md:h-[340px] relative">
@@ -93,7 +98,9 @@ export default function ComplaintListPage() {
                         <img
                           src={item.images[0]}
                           alt="ภาพร้องเรียน"
-                          className="object-cover w-full h-full"
+                          className={`object-cover w-full h-full ${
+                            item.category === "สวัสดิการสังคม" ? "blur-sm" : ""
+                          }`}
                         />
                       ) : (
                         <Swiper
@@ -114,7 +121,9 @@ export default function ComplaintListPage() {
                               <img
                                 src={imgUrl}
                                 alt={`ภาพที่ ${index + 1}`}
-                                className="object-cover w-full h-full"
+                                className={`object-cover w-full h-full ${
+                                  item.category === "สวัสดิการสังคม" ? "blur-sm" : ""
+                                }`}
                               />
                             </SwiperSlide>
                           ))}
@@ -176,10 +185,18 @@ export default function ComplaintListPage() {
             })
           )}
         </div>
-        <CardModalDetail
-          modalData={modalData}
-          onClose={() => setModalData(null)}
-        />
+        {modalData && (
+          <CardModalDetail
+            modalData={{
+              ...modalData,
+              blurImage:
+                modalData.category === "สวัสดิการสังคม" &&
+                modalData.userRole !== "admin" &&
+                modalData.userRole !== "superadmin",
+            }}
+            onClose={() => setModalData(null)}
+          />
+        )}
       </div>
     </>
   );

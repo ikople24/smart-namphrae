@@ -4,9 +4,9 @@ import { useMenuStore } from "@/stores/useMenuStore";
 import { useProblemOptionStore } from "@/stores/useProblemOptionStore";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import CardAssignment from "./CardAssignment";
 import CardOfficail from "./CardOfficail";
 import SatisfactionChart from "./SatisfactionChart";
+import { useUser } from "@clerk/nextjs";
 
 export default function CardModalDetail({ modalData, onClose }) {
   const { menu } = useMenuStore();
@@ -14,6 +14,8 @@ export default function CardModalDetail({ modalData, onClose }) {
   const [categoryIcon, setCategoryIcon] = useState(null);
   const [previewImg, setPreviewImg] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const { user } = useUser();
+  const isAdmin = user?.publicMetadata?.role === "admin";
 
   useEffect(() => {
     fetchProblemOptions();
@@ -58,15 +60,17 @@ export default function CardModalDetail({ modalData, onClose }) {
                         alt={`slide-${idx}`}
                         fill
                         sizes="(max-width: 768px) 100vw, 500px"
-                        className="object-cover"
+                        className={`object-cover ${!isAdmin && modalData.blurImage ? "blur-sm" : ""}`}
                       />
-                      <button
-                        className="absolute bottom-2 right-2 z-20 bg-white/20 hover:bg-white/40 border-white/30 text-white text-xl p-1 rounded-full backdrop-blur"
-                        title="ดูรูปเต็มจอ"
-                        onClick={() => setPreviewImg(img)}
-                      >
-                        🔍
-                      </button>
+                      {isAdmin && modalData.category === "สวัสดิการสังคม" && (
+                        <button
+                          className="absolute bottom-2 right-2 z-20 bg-white/20 hover:bg-white/40 border-white/30 text-white text-xl p-1 rounded-full backdrop-blur"
+                          title="ดูรูปเต็มจอ"
+                          onClick={() => setPreviewImg(img)}
+                        >
+                          🔍
+                        </button>
+                      )}
                     </div>
                     <div className="absolute flex justify-between transform -translate-y-1/2 left-2 right-2 top-1/2 z-10">
                       <button
@@ -167,11 +171,12 @@ export default function CardModalDetail({ modalData, onClose }) {
             <div>
               <div className="font-semibold mb-1">รายละเอียด</div>
               <div className="bg-yellow-50 p-3 text-sm text-gray-700 rounded border">
-                {modalData.detail}
+                <span>
+                  {modalData.detail}
+                </span>
               </div>
             </div>
               <CardOfficail probId={modalData?._id} />
-              <CardAssignment probId={modalData?._id} />
               <SatisfactionChart complaintId={modalData._id} />
             <div className="mt-4 text-center">
               <button
