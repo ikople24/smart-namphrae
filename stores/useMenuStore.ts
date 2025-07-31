@@ -23,15 +23,19 @@ export const useMenuStore = create<MenuStoreState>((set) => ({
   fetchMenu: async () => {
     set({ menuLoading: true });
     try {
-      const response = await fetch("/api/menu");
+      console.log("🔍 Fetching menu from /api/menu-direct...");
+      const response = await fetch("/api/menu-direct");
       if (!response.ok) {
-        throw new Error("Failed to fetch complaints");
+        throw new Error("Failed to fetch menu data");
       }
       const data = await response.json();
+      console.log("🔍 Menu data received:", data);
+      console.log("🔍 Menu data length:", data.length);
+      console.log("🔍 Menu Prob_names:", data.map((item: any) => item.Prob_name));
       await new Promise(resolve => setTimeout(resolve, 500));
       set({ menu: data, menuLoading: false, imgLoaded: new Array(data.length).fill(false) });
     } catch (error) {
-      console.error("Error fetching complaints:", error);
+      console.error("Error fetching menu:", error);
       set({ menuLoading: false });
     }
   },

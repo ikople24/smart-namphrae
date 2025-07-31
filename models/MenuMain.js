@@ -4,6 +4,7 @@ const MenuMainSchema = new mongoose.Schema(
   {
     Prob_name: String,
     Prob_pic: String,
+    order: Number,
   },
   { collection: "menu_list" } // ชื่อตรงกับ Compass
 );
