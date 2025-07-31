@@ -8,15 +8,19 @@ import {
   Legend
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
-import { FaCheckCircle, FaListUl, FaChartBar, FaCalendarAlt, FaArrowUp, FaArrowDown } from 'react-icons/fa';
+import { FaCheckCircle, FaListUl, FaChartBar, FaCalendarAlt, FaArrowUp, FaArrowDown, FaMap } from 'react-icons/fa';
+import MapView from '@/components/MapView';
+import Link from 'next/link';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 import { useEffect, useState } from "react";
 
 export default function SummaryByCategory() {
   const [summary, setSummary] = useState([]);
+  const [rawData, setRawData] = useState([]);
   const [year, setYear] = useState("2024");
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('chart'); // 'chart' or 'map'
 
   useEffect(() => {
     async function fetchData() {
@@ -40,6 +44,7 @@ export default function SummaryByCategory() {
         }));
 
         setSummary(result);
+        setRawData(data); // เก็บข้อมูลดิบสำหรับแผนที่
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -177,119 +182,167 @@ export default function SummaryByCategory() {
           </div>
         </div>
 
-        {/* Chart Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Bar Chart */}
-          <div className="lg:col-span-2">
-            <div className="card bg-white shadow-xl">
-              <div className="card-body">
-                <h3 className="card-title text-gray-800 mb-4">
-                  📈 กราฟแท่งแสดงจำนวนตามประเภทปัญหา
-                </h3>
-                <div className="h-80">
-                  <Bar
-                    data={{
-                      labels: summary.map(item => item.category),
-                      datasets: [
-                        {
-                          label: 'จำนวนรายการ',
-                          data: summary.map(item => item.count),
-                          backgroundColor: chartColors,
-                          borderColor: chartColors.map(color => color.replace('0.8', '1')),
-                          borderWidth: 2,
-                          borderRadius: 8,
-                          borderSkipped: false,
-                        },
-                      ],
-                    }}
-                    options={{
-                      responsive: true,
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend: { display: false },
-                        title: { display: false },
-                        tooltip: {
-                          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                          titleColor: 'white',
-                          bodyColor: 'white',
-                          borderColor: 'rgba(255, 255, 255, 0.1)',
-                          borderWidth: 1,
-                          cornerRadius: 8,
-                          displayColors: false,
-                          callbacks: {
-                            label: function(context) {
-                              return `จำนวน: ${context.parsed.y} รายการ`;
-                            }
-                          }
-                        },
-                      },
-                      scales: {
-                        y: {
-                          beginAtZero: true,
-                          ticks: { 
-                            precision: 0,
-                            font: {
-                              size: 12
-                            }
-                          },
-                          grid: {
-                            color: 'rgba(0, 0, 0, 0.1)',
-                          }
-                        },
-                        x: {
-                          ticks: {
-                            font: {
-                              size: 11
-                            }
-                          },
-                          grid: {
-                            display: false
-                          }
-                        }
-                      },
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Category List */}
-          <div className="lg:col-span-1">
-            <div className="card bg-white shadow-xl">
-              <div className="card-body">
-                <h3 className="card-title text-gray-800 mb-4">
-                  📋 รายการประเภทปัญหา
-                </h3>
-                <div className="space-y-3">
-                  {summary
-                    .sort((a, b) => b.count - a.count)
-                    .map((item, index) => (
-                      <div key={item.category} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-3 h-3 rounded-full ${index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-500' : 'bg-blue-500'}`}></div>
-                          <div>
-                            <p className="font-medium text-gray-800 truncate max-w-32">
-                              {item.category}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              {((item.count / total) * 100).toFixed(1)}% ของทั้งหมด
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-lg text-gray-800">
-                            {item.count}
-                          </p>
-                          <p className="text-xs text-gray-500">รายการ</p>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            </div>
+        {/* Tab Navigation */}
+        <div className="mb-6">
+          <div className="tabs tabs-boxed bg-white shadow-sm">
+            <button
+              className={`tab ${activeTab === 'chart' ? 'tab-active' : ''}`}
+              onClick={() => setActiveTab('chart')}
+            >
+              <FaChartBar className="mr-2" />
+              กราฟและสถิติ
+            </button>
+            <button
+              className={`tab ${activeTab === 'map' ? 'tab-active' : ''}`}
+              onClick={() => setActiveTab('map')}
+            >
+              <FaMap className="mr-2" />
+              แผนที่
+            </button>
+            <Link
+              href="/admin/map-view"
+              className="tab tab-outline"
+            >
+              <FaMap className="mr-2" />
+              แผนที่เต็มหน้าจอ
+            </Link>
           </div>
         </div>
+
+        {/* Chart Tab Content */}
+        {activeTab === 'chart' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Bar Chart */}
+            <div className="lg:col-span-2">
+              <div className="card bg-white shadow-xl">
+                <div className="card-body">
+                  <h3 className="card-title text-gray-800 mb-4">
+                    📈 กราฟแท่งแสดงจำนวนตามประเภทปัญหา
+                  </h3>
+                  <div className="h-80">
+                    <Bar
+                      data={{
+                        labels: summary.map(item => item.category),
+                        datasets: [
+                          {
+                            label: 'จำนวนรายการ',
+                            data: summary.map(item => item.count),
+                            backgroundColor: chartColors,
+                            borderColor: chartColors.map(color => color.replace('0.8', '1')),
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            borderSkipped: false,
+                          },
+                        ],
+                      }}
+                      options={{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                          legend: { display: false },
+                          title: { display: false },
+                          tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: 'white',
+                            bodyColor: 'white',
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            displayColors: false,
+                            callbacks: {
+                              label: function(context) {
+                                return `จำนวน: ${context.parsed.y} รายการ`;
+                              }
+                            }
+                          },
+                        },
+                        scales: {
+                          y: {
+                            beginAtZero: true,
+                            ticks: { 
+                              precision: 0,
+                              font: {
+                                size: 12
+                              }
+                            },
+                            grid: {
+                              color: 'rgba(0, 0, 0, 0.1)',
+                            }
+                          },
+                          x: {
+                            ticks: {
+                              font: {
+                                size: 11
+                              }
+                            },
+                            grid: {
+                              display: false
+                            }
+                          }
+                        },
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Category List */}
+            <div className="lg:col-span-1">
+              <div className="card bg-white shadow-xl">
+                <div className="card-body">
+                  <h3 className="card-title text-gray-800 mb-4">
+                    📋 รายการประเภทปัญหา
+                  </h3>
+                  <div className="space-y-3">
+                    {summary
+                      .sort((a, b) => b.count - a.count)
+                      .map((item, index) => (
+                        <div key={item.category} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-500' : 'bg-blue-500'}`}></div>
+                            <div>
+                              <p className="font-medium text-gray-800 truncate max-w-32">
+                                {item.category}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {((item.count / total) * 100).toFixed(1)}% ของทั้งหมด
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-lg text-gray-800">
+                              {item.count}
+                            </p>
+                            <p className="text-xs text-gray-500">รายการ</p>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Map Tab Content */}
+        {activeTab === 'map' && (
+          <div className="card bg-white shadow-xl">
+            <div className="card-body p-0">
+              <div className="p-6 border-b border-gray-200">
+                <h3 className="card-title text-gray-800 mb-2">
+                  🗺️ แผนที่แสดงตำแหน่งการแจ้งปัญหา
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  คลิกที่หมุดเพื่อดูรายละเอียด • ใช้ตัวกรองด้านซ้ายเพื่อเลือกหมวดหมู่
+                </p>
+              </div>
+              <div className="h-96">
+                <MapView data={rawData} year={year} />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Summary Footer */}
         <div className="mt-8">
