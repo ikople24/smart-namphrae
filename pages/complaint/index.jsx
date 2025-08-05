@@ -20,6 +20,8 @@ export default function ComplaintListPage() {
   const [loading, setLoading] = useState(true);
   const [expandedIds, setExpandedIds] = useState([]);
   const [modalData, setModalData] = useState(null);
+  // เพิ่ม state สำหรับ modal preview รูปใหญ่
+  const [previewImg, setPreviewImg] = useState(null);
   const toggleExpand = (id) => {
     setExpandedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -100,7 +102,8 @@ export default function ComplaintListPage() {
                           alt="ภาพร้องเรียน"
                           className={`object-cover w-full h-full ${
                             item.category === "สวัสดิการสังคม" ? "blur-sm" : ""
-                          }`}
+                          } cursor-pointer`}
+                          onClick={e => { e.stopPropagation(); setPreviewImg(item.images[0]); }}
                         />
                       ) : (
                         <Swiper
@@ -123,7 +126,8 @@ export default function ComplaintListPage() {
                                 alt={`ภาพที่ ${index + 1}`}
                                 className={`object-cover w-full h-full ${
                                   item.category === "สวัสดิการสังคม" ? "blur-sm" : ""
-                                }`}
+                                } cursor-pointer`}
+                                onClick={e => { e.stopPropagation(); setPreviewImg(imgUrl); }}
                               />
                             </SwiperSlide>
                           ))}
@@ -185,6 +189,24 @@ export default function ComplaintListPage() {
             })
           )}
         </div>
+        {/* Modal แสดงรูปใหญ่ */}
+        {previewImg && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+            onClick={() => setPreviewImg(null)}
+          >
+            <img
+              src={previewImg}
+              alt="Preview"
+              className="max-w-full max-h-full rounded-lg shadow-lg"
+              onClick={e => e.stopPropagation()}
+            />
+            <button
+              className="absolute top-4 right-4 text-white text-2xl"
+              onClick={() => setPreviewImg(null)}
+            >✖</button>
+          </div>
+        )}
         {modalData && (
           <CardModalDetail
             modalData={{

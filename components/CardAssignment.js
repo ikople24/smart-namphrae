@@ -37,6 +37,8 @@ export default function CardAssignment({ probId }) {
     // );
   }
   const [currentIndex, setCurrentIndex] = useState(0); // currentIndex is used for image display
+  // เพิ่ม state สำหรับ preview รูปใหญ่
+  const [previewImg, setPreviewImg] = useState(null);
 
   const handlePrev = () => {
     setCurrentIndex((prevIndex) =>
@@ -85,70 +87,94 @@ export default function CardAssignment({ probId }) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto bg-white shadow-md rounded-md p-[6px]">
-      <div className="flex flex-col justify-between space-y-4">
-        {/* วิธีดำเนินการ Section */}
-        <div>
-          <h2 className="text-md font-semibold mb-4">การดำเนินการ</h2>
-          <div className="relative">
-            <Image
-              src={assignment?.solutionImages?.[currentIndex] ?? ""}
-              alt={`Main Image ${currentIndex + 1}`}
-              width={800}
-              height={400}
-              className="w-full h-64 object-cover rounded-t-md transition-all duration-500"
-            />
-            {assignment?.solutionImages?.length > 1 && (
-              <>
-                <button
-                  onClick={handlePrev}
-                  className="absolute top-1/2 left-3 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full p-1 hover:bg-opacity-75"
-                >
-                  ‹
-                </button>
-                <button
-                  onClick={handleNext}
-                  className="absolute top-1/2 right-3 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full p-1 hover:bg-opacity-75"
-                >
-                  ›
-                </button>
-              </>
-            )}
+    <>
+      <div className="max-w-4xl mx-auto bg-white shadow-md rounded-md p-[6px]">
+        <div className="flex flex-col justify-between space-y-4">
+          {/* วิธีดำเนินการ Section */}
+          <div>
+            <h2 className="text-md font-semibold mb-4">การดำเนินการ</h2>
+            <div className="relative">
+              <Image
+                src={assignment?.solutionImages?.[currentIndex] ?? ""}
+                alt={`Main Image ${currentIndex + 1}`}
+                width={800}
+                height={400}
+                className="w-full h-64 object-cover rounded-t-md transition-all duration-500 cursor-pointer"
+                onClick={() => setPreviewImg(assignment?.solutionImages?.[currentIndex])}
+              />
+              {assignment?.solutionImages?.length > 1 && (
+                <>
+                  <button
+                    onClick={handlePrev}
+                    className="absolute top-1/2 left-3 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full p-1 hover:bg-opacity-75"
+                  >
+                    ‹
+                  </button>
+                  <button
+                    onClick={handleNext}
+                    className="absolute top-1/2 right-3 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full p-1 hover:bg-opacity-75"
+                  >
+                    ›
+                  </button>
+                </>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* เจ้าหน้าที่ Section */}
-        <div className="grid grid-cols-5 gap-4 items-start h-full">
-          <div className="col-span-3 pr-6 border-r border-gray-300 h-full">
-            <div className="text-md font-semibold mb-4">
-              วิธีดำเนินการ (ทั้งหมด)
-            </div>
-            <div className="space-y-3">
-              {matchedOptions.map((opt) => (
-                <div key={opt.label} className="flex flex-col-2 justify-between items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <Image
-                      src={opt.icon_url || "/check-icon.png"}
-                      alt="icon"
-                      width={24}
-                      height={24}
-                      className="w-6 h-6"
-                    />
-                    <span className="text-sm text-gray-800">{opt.label}</span>
+          {/* เจ้าหน้าที่ Section */}
+          <div className="grid grid-cols-5 gap-4 items-start h-full">
+            <div className="col-span-3 pr-6 border-r border-gray-300 h-full">
+              <div className="text-md font-semibold mb-4">
+                วิธีดำเนินการ (ทั้งหมด)
+              </div>
+              <div className="space-y-3">
+                {matchedOptions.map((opt) => (
+                  <div key={opt.label} className="flex flex-col-2 justify-between items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <Image
+                        src={opt.icon_url || "/check-icon.png"}
+                        alt="icon"
+                        width={24}
+                        height={24}
+                        className="w-6 h-6"
+                      />
+                      <span className="text-sm text-gray-800">{opt.label}</span>
+                    </div>
+                    <BadgeCheck className="w-4 h-4 text-green-500" />
                   </div>
-                  <BadgeCheck className="w-4 h-4 text-green-500" />
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-          <div className="col-span-2">
-            <div className="text-md font-semibold mb-2">บันทึกเจ้าหน้าที่</div>
-            <div className="bg-green-200 border border-green-200 rounded-md p-4 text-green-800 text-sm">
-              <p>{assignment?.note}</p>
+            <div className="col-span-2">
+              <div className="text-md font-semibold mb-2">บันทึกเจ้าหน้าที่</div>
+              <div className="bg-green-200 border border-green-200 rounded-md p-4 text-green-800 text-sm">
+                <p>{assignment?.note}</p>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+      {/* Modal แสดงรูปใหญ่ */}
+      {previewImg && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+          onClick={() => setPreviewImg(null)}
+        >
+          <Image
+            src={previewImg}
+            alt="Preview"
+            width={800}
+            height={600}
+            sizes="(max-width: 768px) 100vw, 800px"
+            className="max-w-full max-h-full rounded-lg shadow-lg object-contain"
+            onClick={e => e.stopPropagation()}
+          />
+          <button
+            className="absolute top-4 right-4 text-white text-2xl"
+            onClick={() => setPreviewImg(null)}
+          >✖</button>
+        </div>
+      )}
+    </>
   );
 }
