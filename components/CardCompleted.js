@@ -26,6 +26,7 @@ const CompletedCard = ({
   const { problemOptions } = useProblemOptionStore();
   const [activeIcons, setActiveIcons] = useState([]);
   const [assignment, setAssignment] = useState(null);
+  const [previewImg, setPreviewImg] = useState(null); // เพิ่ม state สำหรับ modal preview
 
   // console.log("CompletedCard props:", {
   //   complaintMongoId,
@@ -87,76 +88,99 @@ useEffect(() => {
 }, [complaintMongoId]);
 
   return (
-    <div className="bg-white shadow-md rounded-2xl p-4 border border-green-300 space-y-2 max-h-[90vh] overflow-auto">
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          {menu
-            ?.filter((item) => item.Prob_name === title)
-            .map((item, index) => (
-              <img
-                key={index}
-                src={item.Prob_pic}
-                alt={item.Prob_name}
-                className="w-10 h-10 object-contain"
-              />
-            ))}
-          <h2 className="text-lg font-semibold text-gray-800">
-            {title}
-          </h2>
-        </div>
-        <div className="text-xs text-gray-500 whitespace-nowrap">
-          วันที่สำเร็จ: {new Date(assignment?.completedAt || updatedAt).toLocaleDateString("th-TH")}
-        </div>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {activeIcons.map((item, index) => (
-          <div
-            key={index}
-            className="flex items-center gap-1 bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm"
-          >
-            {item.iconUrl && (
-              <img
-                src={item.iconUrl}
-                alt={item.label}
-                className="w-5 h-5 object-contain"
-              />
-            )}
-            <span>{item.label}</span>
+    <>
+      <div className="bg-white shadow-md rounded-2xl p-4 border border-green-300 space-y-2 max-h-[90vh] overflow-auto">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            {menu
+              ?.filter((item) => item.Prob_name === title)
+              .map((item, index) => (
+                <img
+                  key={index}
+                  src={item.Prob_pic}
+                  alt={item.Prob_name}
+                  className="w-10 h-10 object-contain"
+                />
+              ))}
+            <h2 className="text-lg font-semibold text-gray-800">
+              {title}
+            </h2>
           </div>
-        ))}
-      </div>
-      {useMemo(() => {
-        if (beforeImage && assignment?.solutionImages?.[0]) {
-          return (
+          <div className="text-xs text-gray-500 whitespace-nowrap">
+            วันที่สำเร็จ: {new Date(assignment?.completedAt || updatedAt).toLocaleDateString("th-TH")}
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {activeIcons.map((item, index) => (
             <div
-              className="relative my-2 max-w-full h-[180px] sm:h-[220px] mx-auto pointer-events-auto z-10 overflow-hidden rounded-lg border border-green-200"
-              onClick={(e) => e.stopPropagation()}
+              key={index}
+              className="flex items-center gap-1 bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm"
             >
-              <div className="absolute top-2 left-2 z-20 bg-black bg-opacity-50 text-white px-2 py-0.5 rounded text-xs">
-                ก่อนดำเนินการ
-              </div>
-              <div className="absolute top-2 right-2 z-20 bg-black bg-opacity-50 text-white px-2 py-0.5 rounded text-xs">
-                หลังดำเนินการ
-              </div>
-              <ReactCompareImage
-                leftImage={beforeImage}
-                rightImage={assignment.solutionImages[0]}
-                handle={<div />}  // ซ่อนปุ่มเลื่อน
-                sliderLineWidth={2}
-                sliderPositionPercentage={0.5}
-              />
+              {item.iconUrl && (
+                <img
+                  src={item.iconUrl}
+                  alt={item.label}
+                  className="w-5 h-5 object-contain"
+                />
+              )}
+              <span>{item.label}</span>
             </div>
-          );
-        }
-        return null;
-      }, [beforeImage, assignment?.solutionImages])}
-      <div className="flex justify-end mt-2">
-        <div className="inline-flex items-center gap-1 border border-green-500 text-green-600 px-3 py-1 rounded-full text-xs">
-          <CircleCheck size={14} className="text-green-500" />
-          ดำเนินการเสร็จสิ้น
+          ))}
+        </div>
+        {useMemo(() => {
+          if (beforeImage && assignment?.solutionImages?.[0]) {
+            return (
+              <div
+                className="relative my-2 max-w-full h-[180px] sm:h-[220px] mx-auto pointer-events-auto z-10 overflow-hidden rounded-lg border border-green-200 cursor-pointer"
+                onClick={() => setPreviewImg('compare')}
+              >
+                <div className="absolute top-2 left-2 z-20 bg-black bg-opacity-50 text-white px-2 py-0.5 rounded text-xs">
+                  ก่อนดำเนินการ
+                </div>
+                <div className="absolute top-2 right-2 z-20 bg-black bg-opacity-50 text-white px-2 py-0.5 rounded text-xs">
+                  หลังดำเนินการ
+                </div>
+                <ReactCompareImage
+                  leftImage={beforeImage}
+                  rightImage={assignment.solutionImages[0]}
+                  handle={<div />}  // ซ่อนปุ่มเลื่อน
+                  sliderLineWidth={2}
+                  sliderPositionPercentage={0.5}
+                />
+              </div>
+            );
+          }
+          return null;
+        }, [beforeImage, assignment?.solutionImages])}
+        <div className="flex justify-end mt-2">
+          <div className="inline-flex items-center gap-1 border border-green-500 text-green-600 px-3 py-1 rounded-full text-xs">
+            <CircleCheck size={14} className="text-green-500" />
+            ดำเนินการเสร็จสิ้น
+          </div>
         </div>
       </div>
-    </div>
+      {/* Modal แสดงรูปเปรียบเทียบใหญ่ */}
+      {previewImg === 'compare' && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+          onClick={() => setPreviewImg(null)}
+        >
+          <div className="bg-white rounded-lg p-4 max-w-3xl w-full relative" onClick={e => e.stopPropagation()}>
+            <ReactCompareImage
+              leftImage={beforeImage}
+              rightImage={assignment?.solutionImages?.[0]}
+              handle={<div />}  // ซ่อนปุ่มเลื่อน
+              sliderLineWidth={2}
+              sliderPositionPercentage={0.5}
+            />
+            <button
+              className="absolute top-2 right-2 text-black text-2xl"
+              onClick={() => setPreviewImg(null)}
+            >✖</button>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

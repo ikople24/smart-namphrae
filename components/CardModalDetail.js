@@ -61,7 +61,8 @@ export default function CardModalDetail({ modalData, onClose }) {
                         alt={`slide-${idx}`}
                         fill
                         sizes="(max-width: 768px) 100vw, 500px"
-                        className={`object-cover ${!isAdmin && modalData.blurImage ? "blur-sm" : ""}`}
+                        className={`object-cover ${!isAdmin && modalData.blurImage ? "blur-sm" : ""} cursor-pointer`}
+                        onClick={() => setPreviewImg(img)}
                       />
                       {isAdmin && modalData.category === "สวัสดิการสังคม" && (
                         <button
