@@ -7,6 +7,7 @@ import useComplaintStore from "@/stores/useComplaintStore";
 import { useMenuStore } from "@/stores/useMenuStore";
 import UpdateAssignmentModal from "@/components/UpdateAssignmentModal"; // สร้าง component นี้แยกต่างหาก
 import EditUserModal from "@/components/EditUserModal";
+import NotificationStatus from "@/components/NotificationStatus";
 
 const LocationPickerModal = dynamic(() => import("@/components/LocationPickerModal"), {
   ssr: false,
@@ -111,6 +112,119 @@ export default function ManageComplaintsPage() {
     setSelectedAssignment(assignmentWithCategory);
     setShowUpdateModal(true);
   };
+
+  const handleResendNotification = async (complaintId) => {
+    try {
+      console.log("🔄 Attempting to resend notification for:", complaintId);
+      
+      if (!complaintId) {
+        throw new Error("ไม่พบ complaintId");
+      }
+
+      // ตรวจสอบว่า complaintId เป็น MongoDB ObjectId หรือ complaintId string
+      console.log("🔍 ComplaintId type:", typeof complaintId, "Value:", complaintId);
+
+      const confirmed = confirm("คุณแน่ใจหรือไม่ว่าต้องการส่งแจ้งเตือนอีกครั้ง?");
+      if (!confirmed) return;
+
+      setLoading(true);
+      console.log("📤 Sending request to resend notification...");
+      
+      const res = await fetch("/api/submittedreports/resend-notification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ complaintId }),
+      });
+
+      console.log("📡 Response status:", res.status);
+
+      if (!res.ok) {
+        let errorMessage = "Failed to resend notification";
+        let errorDetails = {};
+        try {
+          const errorData = await res.json();
+          errorMessage = errorData.error || errorData.details || errorMessage;
+          errorDetails = errorData;
+        } catch (parseError) {
+          console.error("❌ Failed to parse error response:", parseError);
+        }
+        
+        console.error("❌ API Error Details:", errorDetails);
+        
+        if (errorDetails.searchedId) {
+          errorMessage += `\n\nSearched ID: ${errorDetails.searchedId}`;
+        }
+        
+        if (errorDetails.sampleComplaints) {
+          errorMessage += `\n\nSample complaints in database:`;
+          errorDetails.sampleComplaints.forEach((c, i) => {
+            errorMessage += `\n${i + 1}. _id: ${c._id}, complaintId: ${c.complaintId || 'N/A'}, name: ${c.fullName}`;
+          });
+        }
+        
+        throw new Error(errorMessage);
+      }
+
+      const result = await res.json();
+      console.log("✅ Notification resent successfully:", result);
+      alert("ส่งแจ้งเตือนอีกครั้งสำเร็จ");
+      
+      // รีเฟรชข้อมูลใหม่
+      fetchComplaints();
+    } catch (error) {
+      console.error("❌ Error resending notification:", error);
+      alert("เกิดข้อผิดพลาดในการส่งแจ้งเตือน: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTestN8nConnection = async () => {
+    try {
+      setLoading(true);
+      console.log("🧪 Testing n8n connection...");
+      
+      const res = await fetch("/api/test-n8n-connection");
+      const result = await res.json();
+      
+      if (result.success) {
+        alert("✅ การเชื่อมต่อ n8n สำเร็จ\n\nสถานะ: " + result.status + "\nข้อความ: " + result.message);
+      } else {
+        alert("❌ การเชื่อมต่อ n8n ล้มเหลว\n\nข้อผิดพลาด: " + result.error + "\nรายละเอียด: " + result.details);
+      }
+    } catch (error) {
+      console.error("❌ Error testing n8n connection:", error);
+      alert("เกิดข้อผิดพลาดในการทดสอบการเชื่อมต่อ: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTestComplaintData = async () => {
+    try {
+      setLoading(true);
+      console.log("🧪 Testing complaint data...");
+      
+      const res = await fetch("/api/test-complaint-data", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+      const result = await res.json();
+      
+      if (result.success) {
+        alert("✅ การส่งข้อมูลทดสอบสำเร็จ\n\nสถานะ: " + result.status + "\nข้อความ: " + result.message);
+      } else {
+        alert("❌ การส่งข้อมูลทดสอบล้มเหลว\n\nข้อผิดพลาด: " + result.error + "\nรายละเอียด: " + result.details);
+      }
+    } catch (error) {
+      console.error("❌ Error testing complaint data:", error);
+      alert("เกิดข้อผิดพลาดในการทดสอบข้อมูล: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
  
 
   return (
@@ -119,7 +233,35 @@ export default function ManageComplaintsPage() {
         <title>จัดการเรื่องร้องเรียน - Admin</title>
       </Head>
       <div className="p-6 max-w-full mx-auto">
-        <h1 className="text-2xl font-bold mb-4">จัดการเรื่องร้องเรียน</h1>
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold">จัดการเรื่องร้องเรียน</h1>
+          <div className="flex gap-2">
+            <button
+              className="btn btn-outline btn-info btn-sm"
+              onClick={handleTestN8nConnection}
+              disabled={loading}
+              title="ทดสอบการเชื่อมต่อ n8n"
+            >
+              {loading ? (
+                <span className="loading loading-spinner loading-xs"></span>
+              ) : (
+                "🧪 ทดสอบ n8n"
+              )}
+            </button>
+            <button
+              className="btn btn-outline btn-warning btn-sm"
+              onClick={handleTestComplaintData}
+              disabled={loading}
+              title="ทดสอบการส่งข้อมูล"
+            >
+              {loading ? (
+                <span className="loading loading-spinner loading-xs"></span>
+              ) : (
+                "📤 ทดสอบข้อมูล"
+              )}
+            </button>
+          </div>
+        </div>
         {complaints.length === 0 ? (
           <p>ไม่มีข้อมูลเรื่องร้องเรียน</p>
         ) : (
@@ -132,6 +274,7 @@ export default function ManageComplaintsPage() {
                   <th>ภาพปัญหา</th>
                   <th>หัวข้อ</th>
                   <th>อัปเดตล่าสุด</th>
+                  <th>แจ้งเตือน</th>
                   <th>การจัดการ</th>
                 </tr>
               </thead>
@@ -140,6 +283,15 @@ export default function ManageComplaintsPage() {
                   .slice()
                   .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
                   .map((complaint, index) => {
+                  // Debug: Log complaint data for all complaints
+                  console.log(`🔍 Complaint ${index + 1} data:`, {
+                    _id: complaint._id,
+                    complaintId: complaint.complaintId,
+                    fullName: complaint.fullName,
+                    category: complaint.category,
+                    hasComplaintId: !!complaint.complaintId
+                  });
+                  
                   const isAssigned = assignments.some(
                     (a) => a.complaintId === complaint._id
                   );
@@ -182,7 +334,29 @@ export default function ManageComplaintsPage() {
                           "th-TH"
                         )}
                       </td>
-                      <td className="flex gap-2">
+                      <td className="text-sm text-center">
+                        <div className="flex flex-col items-center space-y-1">
+                          <NotificationStatus
+                            notificationCount={complaint.notificationCount || 0}
+                            lastNotificationSent={complaint.lastNotificationSent}
+                            onResend={() => {
+                              const idToSend = complaint.complaintId || complaint._id;
+                              console.log(`🔔 Resending notification for complaint ${index + 1}:`, {
+                                complaintId: complaint.complaintId,
+                                _id: complaint._id,
+                                idToSend: idToSend
+                              });
+                              handleResendNotification(idToSend);
+                            }}
+                            loading={loading}
+                            disabled={false}
+                          />
+                          <div className="text-xs text-gray-500">
+                            ID: {complaint.complaintId || complaint._id.toString().slice(-6)}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="flex gap-2 flex-wrap">
                         {!isClosed ? (
                           isAssigned ? (
                             <>
@@ -211,15 +385,19 @@ export default function ManageComplaintsPage() {
                               >
                                 ปิดเรื่อง
                               </button>
+
                             </>
                           ) : (
-                            <button
-                              className="btn btn-primary btn-sm"
-                              onClick={() => handleAssign(complaint._id)}
-                              disabled={loading}
-                            >
-                              รับเรื่อง
-                            </button>
+                            <>
+                              <button
+                                className="btn btn-primary btn-sm"
+                                onClick={() => handleAssign(complaint._id)}
+                                disabled={loading}
+                              >
+                                รับเรื่อง
+                              </button>
+
+                            </>
                           )
                         ) : (
                           <>
