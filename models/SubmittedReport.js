@@ -33,6 +33,13 @@ const SubmittedReportSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  lastNotificationSent: {
+    type: Date,
+  },
+  notificationCount: {
+    type: Number,
+    default: 0,
+  },
 });
 
 export default mongoose.models.SubmittedReport || mongoose.model('SubmittedReport', SubmittedReportSchema);
