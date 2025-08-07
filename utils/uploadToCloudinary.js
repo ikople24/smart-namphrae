@@ -1,20 +1,37 @@
 export async function uploadToCloudinary(file) {
-  const resized = await resizeImage(file);
+  try {
+    console.log("📤 Uploading image to Cloudinary:", file.name);
+    
+    const resized = await resizeImage(file);
 
-  const formData = new FormData();
-  formData.append("file", resized);
-  formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET);
+    const formData = new FormData();
+    formData.append("file", resized);
+    formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET);
 
-  const res = await fetch(
-    `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
-    {
-      method: "POST",
-      body: formData,
+    if (!process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || !process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME) {
+      throw new Error("Cloudinary configuration missing");
     }
-  );
 
-  const data = await res.json();
-  return data.secure_url;
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error?.message || `Upload failed with status ${res.status}`);
+    }
+
+    const data = await res.json();
+    console.log("✅ Image uploaded successfully:", data.secure_url);
+    return data.secure_url;
+  } catch (error) {
+    console.error("❌ Upload to Cloudinary failed:", error);
+    throw error;
+  }
 }
 
 // ฟังก์ชันช่วยปรับขนาดภาพก่อนอัปโหลด

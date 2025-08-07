@@ -9,15 +9,23 @@ const ImageUploads = ({ onChange }) => {
 
   const deleteFromCloudinary = async (url) => {
     try {
-      await fetch("/api/delete-image", {
+      console.log("🗑️ Attempting to delete image:", url);
+      const response = await fetch("/api/delete-image", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ url }),
       });
+      
+      if (response.ok) {
+        console.log("✅ Image deleted successfully");
+      } else {
+        const errorData = await response.json();
+        console.error("❌ Failed to delete image:", errorData.error);
+      }
     } catch (err) {
-      console.error("Failed to delete image:", err);
+      console.error("❌ Error deleting image:", err);
     }
   };
 
