@@ -59,7 +59,8 @@ export default function CardAssignment({ probId }) {
           `/api/assignments/by-complaint?complaintId=${probId}`
         );
         const data = await res.json();
-        // debug: console.log("📦 assignment data:", data);
+        // console.log("📦 assignment data:", data);
+        // console.log("📦 assignment.data[0]:", data.data?.[0]);
         setAssignment(data.data?.[0]);
       } catch (error) {
         console.error("Failed to fetch assignment:", error);
@@ -71,6 +72,15 @@ export default function CardAssignment({ probId }) {
     }
   }, [probId]);
 
+  // console.log("🔍 CardAssignment render check:", {
+  //   hasAssignment: !!assignment,
+  //   assignment: assignment,
+  //   hasSolution: !!assignment?.solution,
+  //   hasNote: !!assignment?.note,
+  //   hasSolutionImages: Array.isArray(assignment?.solutionImages),
+  //   solutionImagesLength: assignment?.solutionImages?.length || 0
+  // });
+
   if (
     !assignment ||
     (
@@ -80,9 +90,9 @@ export default function CardAssignment({ probId }) {
         (typeof assignment.solution === "string" && assignment.solution.trim() === "")) &&
       (!assignment.note || (typeof assignment.note === "string" && assignment.note.trim() === "")) &&
       (!Array.isArray(assignment.solutionImages) || assignment.solutionImages.length === 0)
-    ) ||
-    !Array.isArray(assignment.solutionImages) || assignment.solutionImages.length === 0
+    )
   ) {
+    // console.log("❌ CardAssignment returning null - conditions not met");
     return null;
   }
 
@@ -90,43 +100,42 @@ export default function CardAssignment({ probId }) {
     <>
       <div className="max-w-4xl mx-auto bg-white shadow-md rounded-md p-[6px]">
         <div className="flex flex-col justify-between space-y-4">
+          <div className="text-lg font-semibold text-gray-800 mb-2">การดำเนินการ</div>
           {/* วิธีดำเนินการ Section */}
-          <div>
-            <h2 className="text-md font-semibold mb-4">การดำเนินการ</h2>
-            <div className="relative">
-              <Image
-                src={assignment?.solutionImages?.[currentIndex] ?? ""}
-                alt={`Main Image ${currentIndex + 1}`}
-                width={800}
-                height={400}
-                className="w-full h-64 object-cover rounded-t-md transition-all duration-500 cursor-pointer"
-                onClick={() => setPreviewImg(assignment?.solutionImages?.[currentIndex])}
-              />
-              {assignment?.solutionImages?.length > 1 && (
-                <>
-                  <button
-                    onClick={handlePrev}
-                    className="absolute top-1/2 left-3 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full p-1 hover:bg-opacity-75"
-                  >
-                    ‹
-                  </button>
-                  <button
-                    onClick={handleNext}
-                    className="absolute top-1/2 right-3 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full p-1 hover:bg-opacity-75"
-                  >
-                    ›
-                  </button>
-                </>
-              )}
+          {Array.isArray(assignment?.solutionImages) && assignment.solutionImages.length > 0 && (
+            <div>
+              <div className="relative">
+                <Image
+                  src={assignment?.solutionImages?.[currentIndex] ?? ""}
+                  alt={`Main Image ${currentIndex + 1}`}
+                  width={800}
+                  height={400}
+                  className="w-full h-64 object-cover rounded-t-md transition-all duration-500 cursor-pointer"
+                  onClick={() => setPreviewImg(assignment?.solutionImages?.[currentIndex])}
+                />
+                {assignment?.solutionImages?.length > 1 && (
+                  <>
+                    <button
+                      onClick={handlePrev}
+                      className="absolute top-1/2 left-3 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full p-1 hover:bg-opacity-75"
+                    >
+                      ‹
+                    </button>
+                    <button
+                      onClick={handleNext}
+                      className="absolute top-1/2 right-3 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full p-1 hover:bg-opacity-75"
+                    >
+                      ›
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* เจ้าหน้าที่ Section */}
-          <div className="grid grid-cols-5 gap-4 items-start h-full">
-            <div className="col-span-3 pr-6 border-r border-gray-300 h-full">
-              <div className="text-md font-semibold mb-4">
-                วิธีดำเนินการ (ทั้งหมด)
-              </div>
+          <div className={`${Array.isArray(assignment?.solutionImages) && assignment.solutionImages.length > 0 ? 'grid grid-cols-5 gap-4 items-start h-full' : 'w-full'}`}>
+            <div className={`${Array.isArray(assignment?.solutionImages) && assignment.solutionImages.length > 0 ? 'col-span-3 pr-6 border-r border-gray-300 h-full' : 'w-full'}`}>
               <div className="space-y-3">
                 {matchedOptions.map((opt) => (
                   <div key={opt.label} className="flex flex-col-2 justify-between items-center gap-3">
@@ -145,7 +154,7 @@ export default function CardAssignment({ probId }) {
                 ))}
               </div>
             </div>
-            <div className="col-span-2">
+            <div className={`${Array.isArray(assignment?.solutionImages) && assignment.solutionImages.length > 0 ? 'col-span-2' : 'w-full mt-4'}`}>
               <div className="text-md font-semibold mb-2">บันทึกเจ้าหน้าที่</div>
               <div className="bg-green-200 border border-green-200 rounded-md p-4 text-green-800 text-sm">
                 <p>{assignment?.note}</p>

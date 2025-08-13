@@ -188,8 +188,7 @@ export default function CardModalDetail({ modalData, onClose }) {
                   setCurrentSlide(0);
                   onClose();
                 }}
-                className="btn btn-sm btn-outline"ple
-                
+                className="btn btn-sm btn-outline"
               >
                 ปิด
               </button>

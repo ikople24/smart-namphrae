@@ -74,21 +74,27 @@ const SatisfactionChart = ({ complaintId }) => {
       <div className="mt-6">
         <h3 className="font-medium">ความคิดเห็นอื่นๆ</h3>
         <div className="space-y-2 mt-2">
-          {data
-            .filter((d) => d.comment)
-            .slice(0, 5)
-            .map((item, idx) => (
-              <div
-                key={idx}
-                className={`rounded px-3 py-2 text-sm ${
-                  idx % 2 === 0
-                    ? "bg-violet-50"
-                    : "bg-green-50 text-gray-800 font-medium"
-                }`}
-              >
-                {item.comment}
-              </div>
-            ))}
+          {data.filter((d) => d.comment).length > 0 ? (
+            data
+              .filter((d) => d.comment)
+              .slice(0, 5)
+              .map((item, idx) => (
+                <div
+                  key={idx}
+                  className={`rounded px-3 py-2 text-sm ${
+                    idx % 2 === 0
+                      ? "bg-violet-50"
+                      : "bg-green-50 text-gray-800 font-medium"
+                  }`}
+                >
+                  {item.comment}
+                </div>
+              ))
+          ) : (
+            <div className="text-center text-gray-500 text-sm py-4">
+              ยังไม่มีความคิดเห็น
+            </div>
+          )}
         </div>
       </div>
     </div>
