@@ -36,7 +36,11 @@ export default function CardModalDetail({ modalData, onClose }) {
     setCurrentSlide(0);  // Reset slide index
   }, [modalData]);
 
-  if (!modalData) return null;
+  // console.log("🔍 CardModalDetail modalData:", modalData);
+  // console.log("🔍 modalData._id:", modalData?._id);
+  // console.log("🔍 modalData.complaintId:", modalData?.complaintId);
+  
+  if (!modalData || !modalData.complaintId || !modalData.category) return null;
 
   return (
     <>
@@ -134,53 +138,55 @@ export default function CardModalDetail({ modalData, onClose }) {
               </div>
             </div>
           )}
-          {modalData.images?.[0] && (
-            <div className="px-4 py-2 text-sm text-gray-600 font-semibold flex items-center gap-2 mt-2">
-              เลขที่คำร้อง: <span className="text-black">{modalData.complaintId}</span>
-              <button className="ml-auto text-gray-500 hover:text-gray-700">
-                <ReceiptText size={18} />
-              </button>
-            </div>
-          )}
+          <div className="px-4 py-2 text-sm text-gray-600 font-semibold flex items-center gap-2 mt-2">
+            เลขที่คำร้อง: <span className="text-black">{modalData.complaintId}</span>
+            <button className="ml-auto text-gray-500 hover:text-gray-700">
+              <ReceiptText size={18} />
+            </button>
+          </div>
           <div className="p-4 space-y-2">
             <div className="mb-3">
               <div className="font-semibold mb-1">ปัญหาที่พบ</div>
               <div className="flex flex-wrap gap-2">
-                {modalData.problems?.map((p, idx) => {
-                  const cleanLabel = typeof p === "string" ? p.trim() : "";
-                  const matched = problemOptions.find((opt) => opt.label === cleanLabel);
-                  return (
-                    <div
-                      key={idx}
-                      className="flex items-center gap-1 border border-gray-300 px-3 py-1 rounded-full shadow-sm bg-white text-sm text-gray-800"
-                    >
-                      {matched?.iconUrl && (
-                        <Image
-                          src={matched.iconUrl}
-                          alt={cleanLabel}
-                          width={16}
-                          height={16}
-                          sizes="16px"
-                          className="object-contain"
-                        />
-                      )}
-                      <span>{cleanLabel}</span>
-                    </div>
-                  );
-                })}
+                {modalData.problems && modalData.problems.length > 0 ? (
+                  modalData.problems.map((p, idx) => {
+                    const cleanLabel = typeof p === "string" ? p.trim() : "";
+                    const matched = problemOptions.find((opt) => opt.label === cleanLabel);
+                    return (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-1 border border-gray-300 px-3 py-1 rounded-full shadow-sm bg-white text-sm text-gray-800"
+                      >
+                        {matched?.iconUrl && (
+                          <Image
+                            src={matched.iconUrl}
+                            alt={cleanLabel}
+                            width={16}
+                            height={16}
+                            sizes="16px"
+                            className="object-contain"
+                          />
+                        )}
+                        <span>{cleanLabel}</span>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-gray-500 text-sm">ไม่มีข้อมูลปัญหาที่พบ</div>
+                )}
               </div>
             </div>
             <div>
               <div className="font-semibold mb-1">รายละเอียด</div>
               <div className="bg-yellow-50 p-3 text-sm text-gray-700 rounded border">
                 <span>
-                  {modalData.detail}
+                  {modalData.detail || "ไม่มีรายละเอียด"}
                 </span>
               </div>
             </div>
-              <CardOfficail probId={modalData?._id} />
-              <CardAssignment probId={modalData?._id} />
-              <SatisfactionChart complaintId={modalData._id} />
+              <CardOfficail probId={modalData?._id || modalData?.complaintId} />
+              <CardAssignment probId={modalData?._id || modalData?.complaintId} />
+              <SatisfactionChart complaintId={modalData?._id || modalData?.complaintId} />
             <div className="mt-4 text-center">
               <button
                 onClick={() => {

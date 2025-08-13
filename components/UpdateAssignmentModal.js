@@ -143,7 +143,7 @@ export default function UpdateAssignmentModal({ assignment, onClose }) {
           </div>
           <div className="mb-4">
             <label className="label">
-              <span className="label-text text-sm font-medium text-gray-800">2. อัปโหลดภาพถ่าย</span>
+              <span className="label-text text-sm font-medium text-gray-800">อัปโหลดภาพถ่าย</span>
             </label>
             <ImageUploads
               initialUrls={solutionImages}

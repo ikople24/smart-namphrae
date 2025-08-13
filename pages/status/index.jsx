@@ -2,9 +2,11 @@ import CardModalDetail from "@/components/CardModalDetail";
 import { useEffect, useState } from "react";
 import useComplaintStore from "@/stores/useComplaintStore";
 import CompletedCard from "@/components/CardCompleted";
+import { useUser } from "@clerk/nextjs";
 
 
 const StatusPage = () => {
+  const { user } = useUser();
   const { complaints, fetchComplaints } = useComplaintStore();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -59,7 +61,12 @@ const StatusPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 py-4 w-full max-w-4xl mx-auto min-h-screen items-stretch">
         {paginatedComplaints.map((item, index) => (
           <div key={index} className="h-full">
-            <div onClick={() => setModalData(item)} className="cursor-pointer h-full flex flex-col">
+            <div onClick={() => {
+              const role = user?.publicMetadata?.role || "user";
+              if (item && item.complaintId && item.category) {
+                setModalData({ ...item, userRole: role });
+              }
+            }} className="cursor-pointer h-full flex flex-col">
               <div className="flex-1">
                 <CompletedCard
                   complaintMongoId={item._id}
@@ -74,6 +81,7 @@ const StatusPage = () => {
                   status={item.status}
                   location={item.location}
                   updatedAt={item.completedAt}
+                  userRole={user?.publicMetadata?.role || "user"}
                 />
               </div>
             </div>
@@ -99,10 +107,18 @@ const StatusPage = () => {
           »
         </button>
       </div>
-      <CardModalDetail
-        modalData={modalData}
-        onClose={() => setModalData(null)}
-      />
+      {modalData && modalData.complaintId && modalData.category && (
+        <CardModalDetail
+          modalData={{
+            ...modalData,
+            blurImage:
+              modalData?.category === "สวัสดิการสังคม" &&
+              modalData?.userRole !== "admin" &&
+              modalData?.userRole !== "superadmin",
+          }}
+          onClose={() => setModalData(null)}
+        />
+      )}
     </>
   );
 };
