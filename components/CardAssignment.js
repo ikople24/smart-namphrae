@@ -81,18 +81,8 @@ export default function CardAssignment({ probId }) {
   //   solutionImagesLength: assignment?.solutionImages?.length || 0
   // });
 
-  if (
-    !assignment ||
-    (
-      (!assignment.solution ||
-        (Array.isArray(assignment.solution) &&
-          assignment.solution.every((s) => !s || (typeof s === "string" && s.trim() === ""))) ||
-        (typeof assignment.solution === "string" && assignment.solution.trim() === "")) &&
-      (!assignment.note || (typeof assignment.note === "string" && assignment.note.trim() === "")) &&
-      (!Array.isArray(assignment.solutionImages) || assignment.solutionImages.length === 0)
-    )
-  ) {
-    // console.log("❌ CardAssignment returning null - conditions not met");
+  if (!assignment) {
+    // console.log("❌ CardAssignment returning null - no assignment data");
     return null;
   }
 
@@ -136,28 +126,33 @@ export default function CardAssignment({ probId }) {
           {/* เจ้าหน้าที่ Section */}
           <div className={`${Array.isArray(assignment?.solutionImages) && assignment.solutionImages.length > 0 ? 'grid grid-cols-5 gap-4 items-start h-full' : 'w-full'}`}>
             <div className={`${Array.isArray(assignment?.solutionImages) && assignment.solutionImages.length > 0 ? 'col-span-3 pr-6 border-r border-gray-300 h-full' : 'w-full'}`}>
+              <div className="text-md font-semibold mb-4">วิธีดำเนินการ (ทั้งหมด)</div>
               <div className="space-y-3">
-                {matchedOptions.map((opt) => (
-                  <div key={opt.label} className="flex flex-col-2 justify-between items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <Image
-                        src={opt.icon_url || "/check-icon.png"}
-                        alt="icon"
-                        width={24}
-                        height={24}
-                        className="w-6 h-6"
-                      />
-                      <span className="text-sm text-gray-800">{opt.label}</span>
+                {matchedOptions && matchedOptions.length > 0 ? (
+                  matchedOptions.map((opt) => (
+                    <div key={opt.label} className="flex flex-col-2 justify-between items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <Image
+                          src={opt.icon_url || "/check-icon.png"}
+                          alt="icon"
+                          width={24}
+                          height={24}
+                          className="w-6 h-6"
+                        />
+                        <span className="text-sm text-gray-800">{opt.label}</span>
+                      </div>
+                      <BadgeCheck className="w-4 h-4 text-green-500" />
                     </div>
-                    <BadgeCheck className="w-4 h-4 text-green-500" />
-                  </div>
-                ))}
+                  ))
+                ) : (
+                  <div className="text-gray-500 text-sm">ไม่มีข้อมูลวิธีดำเนินการ</div>
+                )}
               </div>
             </div>
             <div className={`${Array.isArray(assignment?.solutionImages) && assignment.solutionImages.length > 0 ? 'col-span-2' : 'w-full mt-4'}`}>
               <div className="text-md font-semibold mb-2">บันทึกเจ้าหน้าที่</div>
               <div className="bg-green-200 border border-green-200 rounded-md p-4 text-green-800 text-sm">
-                <p>{assignment?.note}</p>
+                <p>{assignment?.note || "ไม่มีบันทึกเจ้าหน้าที่"}</p>
               </div>
             </div>
           </div>
