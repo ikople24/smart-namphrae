@@ -48,6 +48,8 @@ export default function ManageComplaintsPage() {
     fetchAssignments();
   }, [fetchComplaints, fetchMenu]);
 
+
+
   useEffect(() => {
     const checkUser = async () => {
       if (!userId) return;
@@ -85,7 +87,7 @@ export default function ManageComplaintsPage() {
 
       if (!res.ok) throw new Error("Failed to assign complaint");
       const result = await res.json();
-      console.log("Assignment created:", result);
+
       setAssignmentCreated(true);
       alert("รับงานสำเร็จ");
       fetchAssignments(); // Refresh the assignments list immediately
@@ -136,20 +138,18 @@ export default function ManageComplaintsPage() {
 
   const handleResendNotification = async (complaintId) => {
     try {
-      console.log("🔄 Attempting to resend notification for:", complaintId);
+
       
       if (!complaintId) {
         throw new Error("ไม่พบ complaintId");
       }
 
-      // ตรวจสอบว่า complaintId เป็น MongoDB ObjectId หรือ complaintId string
-      console.log("🔍 ComplaintId type:", typeof complaintId, "Value:", complaintId);
+      
 
       const confirmed = confirm("คุณแน่ใจหรือไม่ว่าต้องการส่งแจ้งเตือนอีกครั้ง?");
       if (!confirmed) return;
 
-      setLoading(true);
-      console.log("📤 Sending request to resend notification...");
+              setLoading(true);
       
       const res = await fetch("/api/submittedreports/resend-notification", {
         method: "POST",
@@ -157,7 +157,7 @@ export default function ManageComplaintsPage() {
         body: JSON.stringify({ complaintId }),
       });
 
-      console.log("📡 Response status:", res.status);
+      
 
       if (!res.ok) {
         let errorMessage = "Failed to resend notification";
@@ -187,7 +187,7 @@ export default function ManageComplaintsPage() {
       }
 
       const result = await res.json();
-      console.log("✅ Notification resent successfully:", result);
+      
       alert("ส่งแจ้งเตือนอีกครั้งสำเร็จ");
       
       // รีเฟรชข้อมูลใหม่
@@ -203,7 +203,7 @@ export default function ManageComplaintsPage() {
   const handleTestN8nConnection = async () => {
     try {
       setLoading(true);
-      console.log("🧪 Testing n8n connection...");
+
       
       const res = await fetch("/api/test-n8n-connection");
       const result = await res.json();
@@ -224,7 +224,7 @@ export default function ManageComplaintsPage() {
   const handleTestComplaintData = async () => {
     try {
       setLoading(true);
-      console.log("🧪 Testing complaint data...");
+
       
       const res = await fetch("/api/test-complaint-data", {
         method: "POST",
@@ -324,7 +324,13 @@ export default function ManageComplaintsPage() {
       </Head>
       <div className="p-6 max-w-full mx-auto">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">จัดการเรื่องร้องเรียน</h1>
+          <div>
+            <h1 className="text-2xl font-bold">จัดการเรื่องร้องเรียน</h1>
+            <p className="text-sm text-gray-600 mt-1">
+              💡 <strong>ฟีเจอร์ใหม่:</strong> Admin สามารถแก้ไขภาพปัญหาได้แล้ว! 
+              กดปุ่ม "แก้ไขข้อมูล" เพื่อแก้ไขภาพที่ไม่เหมาะสม
+            </p>
+          </div>
           <div className="flex gap-2">
             <button
               className="btn btn-outline btn-info btn-sm"
@@ -349,6 +355,23 @@ export default function ManageComplaintsPage() {
               ) : (
                 "📤 ทดสอบข้อมูล"
               )}
+            </button>
+            <button
+              className="btn btn-outline btn-info btn-sm"
+              onClick={async () => {
+                try {
+                  const res = await fetch('/api/test-complaint-data');
+                  const data = await res.json();
+
+                  alert(`ข้อมูลตัวอย่าง: ${data.count} รายการ\nดูข้อมูลใน Console`);
+                } catch (error) {
+                  console.error('Test error:', error);
+                  alert('เกิดข้อผิดพลาดในการทดสอบ');
+                }
+              }}
+              title="ทดสอบข้อมูลฐานข้อมูล"
+            >
+              🗄️ ทดสอบ DB
             </button>
           </div>
         </div>
@@ -507,14 +530,7 @@ export default function ManageComplaintsPage() {
               </thead>
               <tbody>
                 {getFilteredComplaints().map((complaint, index) => {
-                  // Debug: Log complaint data for all complaints
-                  console.log(`🔍 Complaint ${index + 1} data:`, {
-                    _id: complaint._id,
-                    complaintId: complaint.complaintId,
-                    fullName: complaint.fullName,
-                    category: complaint.category,
-                    hasComplaintId: !!complaint.complaintId
-                  });
+
                   
                   const isAssigned = assignments.some(
                     (a) => a.complaintId === complaint._id
@@ -685,11 +701,7 @@ export default function ManageComplaintsPage() {
                             lastNotificationSent={complaint.lastNotificationSent}
                             onResend={() => {
                               const idToSend = complaint.complaintId || complaint._id;
-                              console.log(`🔔 Resending notification for complaint ${index + 1}:`, {
-                                complaintId: complaint.complaintId,
-                                _id: complaint._id,
-                                idToSend: idToSend
-                              });
+
                               handleResendNotification(idToSend);
                             }}
                             loading={loading}
@@ -717,8 +729,9 @@ export default function ManageComplaintsPage() {
                                   setSelectedAssignment(complaint);
                                   setShowEditUserModal(true);
                                 }}
+                                title="แก้ไขข้อมูลผู้แจ้งและภาพปัญหา"
                               >
-                                แก้ไขผู้แจ้ง
+                                แก้ไขข้อมูล
                               </button>
                               <button
                                 className="btn btn-success btn-sm"

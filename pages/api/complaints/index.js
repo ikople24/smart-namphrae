@@ -1,6 +1,6 @@
 //api/complaints/index.js
 import dbConnect from '@/lib/dbConnect';
-import Complaint from '@/models/Complaint';
+import SubmittedReport from '@/models/SubmittedReport';
 
 export default async function handler(req, res) {
   await dbConnect();
@@ -10,11 +10,11 @@ export default async function handler(req, res) {
       const isAdmin = req.query.role === 'admin';
       const projection = isAdmin ? {} : { fullName: 0, phone: 0 };
       const query = req.query.status ? { status: req.query.status } : {};
-      const complaints = await Complaint.find(query, projection);
+      const complaints = await SubmittedReport.find(query, projection).sort({ createdAt: -1 });
 
       return res.status(200).json(complaints);
     } catch (err) {
-      console.error('❌ Failed to fetch complaints:', err);
+
       return res.status(500).json({ success: false, error: 'Failed to fetch complaints' });
     }
   } else {

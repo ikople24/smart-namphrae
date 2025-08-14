@@ -1,70 +1,56 @@
-// pages/api/delete-image.js
+import dbConnect from "@/lib/dbConnect";
+import SubmittedReport from "@/models/SubmittedReport";
+
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+  if (req.method !== "DELETE") {
+    return res.status(405).json({ message: "Method not allowed" });
   }
 
   try {
-    const { url } = req.body;
+    await dbConnect();
+    const { reportId, imageUrl } = req.body;
 
-    if (!url) {
-      return res.status(400).json({ error: "URL is required" });
+    if (!reportId || !imageUrl) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "ต้องระบุ reportId และ imageUrl" 
+      });
     }
 
-    // Extract public_id from Cloudinary URL
-    const urlParts = url.split('/');
-    const uploadIndex = urlParts.findIndex(part => part === 'upload');
+    // หาเรื่องร้องเรียนและลบภาพออกจาก array
+    const report = await SubmittedReport.findById(reportId);
+    if (!report) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "ไม่พบเรื่องร้องเรียนนี้" 
+      });
+    }
+
+    // ลบภาพออกจาก array
+    const updatedImages = report.images.filter(img => img !== imageUrl);
     
-    if (uploadIndex === -1) {
-      console.log("⚠️ Not a Cloudinary URL, skipping deletion:", url);
-      return res.status(200).json({ message: "Not a Cloudinary URL, skipped" });
-    }
+    // อัปเดตข้อมูล
+    const updatedReport = await SubmittedReport.findByIdAndUpdate(
+      reportId,
+      { 
+        images: updatedImages,
+        updatedAt: new Date()
+      },
+      { new: true }
+    );
 
-    const publicIdWithExtension = urlParts.slice(uploadIndex + 2).join('/');
-    const publicId = publicIdWithExtension.split('.')[0]; // Remove file extension
-
-    // Delete from Cloudinary using their API
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-    const apiKey = process.env.CLOUDINARY_API_KEY;
-    const apiSecret = process.env.CLOUDINARY_API_SECRET;
-
-    if (!cloudName || !apiKey || !apiSecret) {
-      console.error("❌ Missing Cloudinary credentials");
-      return res.status(500).json({ error: "Cloudinary configuration missing" });
-    }
-
-    // Create signature for deletion
-    const timestamp = Math.round(new Date().getTime() / 1000);
-    const crypto = await import('crypto');
-    const signature = crypto.default
-      .createHash('sha1')
-      .update(`public_id=${publicId}&timestamp=${timestamp}${apiSecret}`)
-      .digest('hex');
-
-    const deleteUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`;
-    
-    const formData = new FormData();
-    formData.append('public_id', publicId);
-    formData.append('api_key', apiKey);
-    formData.append('timestamp', timestamp);
-    formData.append('signature', signature);
-
-    const deleteResponse = await fetch(deleteUrl, {
-      method: 'POST',
-      body: formData,
+    return res.status(200).json({ 
+      success: true, 
+      message: "ลบภาพสำเร็จ",
+      data: updatedReport
     });
 
-    if (deleteResponse.ok) {
-      console.log("✅ Image deleted from Cloudinary:", publicId);
-      res.status(200).json({ message: "Image deleted successfully" });
-    } else {
-      const errorData = await deleteResponse.text();
-      console.error("❌ Failed to delete image:", errorData);
-      res.status(500).json({ error: "Failed to delete image" });
-    }
-
   } catch (error) {
-    console.error("❌ Error deleting image:", error);
-    res.status(500).json({ error: "Internal server error" });
+
+    return res.status(500).json({ 
+      success: false, 
+      message: "เกิดข้อผิดพลาดในการลบภาพ",
+      error: error.message 
+    });
   }
 } 
