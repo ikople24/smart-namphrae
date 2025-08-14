@@ -3,8 +3,24 @@ import axios from 'axios';
 
 interface Complaint {
   _id: string;
+  complaintId: string;
+  fullName: string;
+  phone: string;
+  community: string;
+  problems: string[];
+  category: string;
+  images: string[];
   detail: string;
-  // เพิ่ม field อื่น ๆ ตาม schema ที่ใช้
+  location: {
+    lat: number;
+    lng: number;
+  };
+  status: string;
+  officer: string;
+  createdAt: string;
+  updatedAt: string;
+  lastNotificationSent?: string;
+  notificationCount: number;
 }
 
 interface ComplaintState {
@@ -21,12 +37,10 @@ const useComplaintStore = create<ComplaintState>((set) => ({
   fetchComplaints: async (status?: string) => {
     set({ isLoading: true, error: null });
     try {
-      const url = status ? `/api/complaints?status=${encodeURIComponent(status)}` : '/api/complaints';
+      const url = status ? `/api/complaints?status=${encodeURIComponent(status)}&role=admin` : '/api/complaints?role=admin';
       const res = await axios.get<Complaint[]>(url);
-      console.log("(store) fetched complaints ✅", res.data);
       set({ complaints: res.data, isLoading: false });
     } catch (err: any) {
-      console.error("(store) fetch error ❌", err.message);
       set({ error: err.message || 'Failed to fetch', isLoading: false });
     }
   }

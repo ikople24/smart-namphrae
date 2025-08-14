@@ -157,3 +157,8 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
+
+/* Custom file input styles */
+.file-input {
+  --tw-file-input-text: "เลือกไฟล์";
+}
