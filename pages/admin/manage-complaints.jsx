@@ -327,8 +327,8 @@ export default function ManageComplaintsPage() {
           <div>
             <h1 className="text-2xl font-bold">จัดการเรื่องร้องเรียน</h1>
             <p className="text-sm text-gray-600 mt-1">
-              💡 <strong>ฟีเจอร์ใหม่:</strong> Admin สามารถแก้ไขภาพปัญหาได้แล้ว! 
-              กดปุ่ม "แก้ไขข้อมูล" เพื่อแก้ไขภาพที่ไม่เหมาะสม
+              💡 <strong>ฟีเจอร์ใหม่:</strong> Admin สามารถแก้ไขข้อมูลและภาพปัญหาได้แล้ว! 
+              กดปุ่ม "แก้ไขข้อมูล" เพื่อแก้ไขข้อมูลผู้แจ้งและภาพที่ไม่เหมาะสม (ใช้งานได้ทั้งเรื่องที่เปิดและปิดแล้ว)
             </p>
           </div>
           <div className="flex gap-2">
@@ -787,6 +787,16 @@ export default function ManageComplaintsPage() {
                                       แก้ไขรายละเอียด
                                     </button>
                                     <button
+                                      className="btn btn-warning btn-sm"
+                                      onClick={() => {
+                                        setSelectedAssignment(complaint);
+                                        setShowEditUserModal(true);
+                                      }}
+                                      title="แก้ไขข้อมูลผู้แจ้งและภาพปัญหา"
+                                    >
+                                      แก้ไขข้อมูล
+                                    </button>
+                                    <button
                                       className="btn btn-error btn-sm"
                                       onClick={() => {
                                         const confirmed = confirm("คุณแน่ใจหรือไม่ว่าต้องการลบเรื่องนี้?");
@@ -815,31 +825,42 @@ export default function ManageComplaintsPage() {
                                 );
                               } else {
                                 return (
-                                  <button
-                                    className="btn btn-error btn-sm"
-                                    onClick={() => {
-                                      const confirmed = confirm("คุณแน่ใจหรือไม่ว่าต้องการลบเรื่องนี้?");
-                                      if (confirmed) {
-                                        fetch(`/api/submittedreports/${complaint._id}`, {
-                                          method: "DELETE",
-                                        })
-                                          .then(async (res) => {
-                                            if (!res.ok) {
-                                              const errorText = await res.text();
-                                              throw new Error(`ลบไม่สำเร็จ: ${errorText}`);
-                                            }
-                                            alert("ลบเรื่องสำเร็จ");
-                                            fetchComplaints();
+                                  <div className="flex flex-col gap-2">
+                                    <button
+                                      className="btn btn-warning btn-sm"
+                                      onClick={() => {
+                                        setSelectedAssignment(complaint);
+                                        setShowEditUserModal(true);
+                                      }}
+                                      title="แก้ไขข้อมูลผู้แจ้งและภาพปัญหา"
+                                    >
+                                      แก้ไขข้อมูล
+                                    </button>
+                                    <button
+                                      className="btn btn-error btn-sm"
+                                      onClick={() => {
+                                        const confirmed = confirm("คุณแน่ใจหรือไม่ว่าต้องการลบเรื่องนี้?");
+                                        if (confirmed) {
+                                          fetch(`/api/submittedreports/${complaint._id}`, {
+                                            method: "DELETE",
                                           })
-                                          .catch((err) => {
-                                            console.error("❌ ลบไม่สำเร็จ:", err);
-                                            alert("เกิดข้อผิดพลาดในการลบ");
-                                          });
-                                      }
-                                    }}
-                                  >
-                                    ลบเรื่อง
-                                  </button>
+                                            .then(async (res) => {
+                                              if (!res.ok) {
+                                                const errorText = await res.text();
+                                                throw new Error(`ลบไม่สำเร็จ: ${errorText}`);
+                                              }
+                                              alert("ลบเรื่องสำเร็จ");
+                                              fetchComplaints();
+                                            })
+                                            .catch((err) => {
+                                              alert("เกิดข้อผิดพลาดในการลบ");
+                                            });
+                                        }
+                                      }}
+                                    >
+                                      ลบเรื่อง
+                                    </button>
+                                  </div>
                                 );
                               }
                             })()}

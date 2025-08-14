@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 
 export default function ImageModal({ isOpen, onClose, imageUrl, title }) {
   if (!isOpen || !imageUrl) return null;
@@ -21,9 +22,12 @@ export default function ImageModal({ isOpen, onClose, imageUrl, title }) {
           )}
           
           <div className="relative">
-            <img
+            <Image
               src={imageUrl}
               alt={title || "ภาพปัญหา"}
+              width={800}
+              height={600}
+              sizes="(max-width: 768px) 100vw, 800px"
               className="max-w-full max-h-[70vh] object-contain"
               onError={(e) => {
                 e.target.src = '/default-icon.png';
