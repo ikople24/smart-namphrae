@@ -22,6 +22,7 @@ export default function ComplaintListPage() {
   const [modalData, setModalData] = useState(null);
   // เพิ่ม state สำหรับ modal preview รูปใหญ่
   const [previewImg, setPreviewImg] = useState(null);
+  const [previewImgCategory, setPreviewImgCategory] = useState(null);
   const toggleExpand = (id) => {
     setExpandedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
@@ -103,7 +104,7 @@ export default function ComplaintListPage() {
                           className={`object-cover w-full h-full ${
                             item.category === "สวัสดิการสังคม" ? "blur-sm" : ""
                           } cursor-pointer`}
-                          onClick={e => { e.stopPropagation(); setPreviewImg(item.images[0]); }}
+                          onClick={e => { e.stopPropagation(); setPreviewImg(item.images[0]); setPreviewImgCategory(item.category); }}
                         />
                       ) : (
                         <Swiper
@@ -127,7 +128,7 @@ export default function ComplaintListPage() {
                                 className={`object-cover w-full h-full ${
                                   item.category === "สวัสดิการสังคม" ? "blur-sm" : ""
                                 } cursor-pointer`}
-                                onClick={e => { e.stopPropagation(); setPreviewImg(imgUrl); }}
+                                onClick={e => { e.stopPropagation(); setPreviewImg(imgUrl); setPreviewImgCategory(item.category); }}
                               />
                             </SwiperSlide>
                           ))}
@@ -193,17 +194,28 @@ export default function ComplaintListPage() {
         {previewImg && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
-            onClick={() => setPreviewImg(null)}
+            onClick={() => {
+              setPreviewImg(null);
+              setPreviewImgCategory(null);
+            }}
           >
             <img
               src={previewImg}
               alt="Preview"
-              className="max-w-full max-h-full rounded-lg shadow-lg"
+              className={`max-w-full max-h-full rounded-lg shadow-lg ${
+                previewImgCategory === "สวัสดิการสังคม" && 
+                (user?.publicMetadata?.role !== "admin" && user?.publicMetadata?.role !== "superadmin") 
+                  ? "blur-sm" 
+                  : ""
+              }`}
               onClick={e => e.stopPropagation()}
             />
             <button
               className="absolute top-4 right-4 text-white text-2xl"
-              onClick={() => setPreviewImg(null)}
+              onClick={() => {
+                setPreviewImg(null);
+                setPreviewImgCategory(null);
+              }}
             >✖</button>
           </div>
         )}

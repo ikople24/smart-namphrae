@@ -216,7 +216,7 @@ export default function CardModalDetail({ modalData, onClose }) {
               width={800}
               height={600}
               sizes="(max-width: 768px) 100vw, 800px"
-              className="object-contain rounded-lg shadow-lg"
+              className={`object-contain rounded-lg shadow-lg ${!isAdmin && modalData.blurImage ? "blur-sm" : ""}`}
             />
             <button
               onClick={(e) => {

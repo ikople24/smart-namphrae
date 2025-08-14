@@ -170,13 +170,15 @@ useEffect(() => {
           onClick={() => setPreviewImg(null)}
         >
           <div className="bg-white rounded-lg p-4 max-w-3xl w-full relative" onClick={e => e.stopPropagation()}>
-            <ReactCompareImage
-              leftImage={beforeImage}
-              rightImage={assignment?.solutionImages?.[0]}
-              handle={<div />}  // ซ่อนปุ่มเลื่อน
-              sliderLineWidth={2}
-              sliderPositionPercentage={0.5}
-            />
+            <div className={title === "สวัสดิการสังคม" && userRole !== "admin" && userRole !== "superadmin" ? "blur-sm" : ""}>
+              <ReactCompareImage
+                leftImage={beforeImage}
+                rightImage={assignment?.solutionImages?.[0]}
+                handle={<div />}  // ซ่อนปุ่มเลื่อน
+                sliderLineWidth={2}
+                sliderPositionPercentage={0.5}
+              />
+            </div>
             <button
               className="absolute top-2 right-2 text-black text-2xl"
               onClick={() => setPreviewImg(null)}

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import Image from "next/image";
 import dynamic from "next/dynamic";
 const LocationPickerModal = dynamic(() => import("./LocationPickerModal"), { ssr: false });
 const ImageModal = dynamic(() => import("./ImageModal"), { ssr: false });
@@ -58,7 +59,8 @@ export default function EditUserModal({ isOpen, onClose, complaint }) {
       }));
       setIsEditingLocation(false);
     } catch (error) {
-      // Error handling
+      console.error('Error saving location:', error);
+      alert('เกิดข้อผิดพลาดในการบันทึกพิกัด');
     }
   };
 
@@ -97,6 +99,7 @@ export default function EditUserModal({ isOpen, onClose, complaint }) {
       setIsManualLocation(false);
       alert('บันทึกพิกัดสำเร็จ');
     } catch (error) {
+      console.error('Error saving manual location:', error);
       alert('เกิดข้อผิดพลาดในการบันทึกพิกัด');
     }
   };
@@ -144,6 +147,7 @@ export default function EditUserModal({ isOpen, onClose, complaint }) {
       };
       reader.readAsDataURL(file);
     } catch (error) {
+      console.error('Error uploading image:', error);
       alert('เกิดข้อผิดพลาดในการอัปโหลดภาพ');
     } finally {
       setUploadingImage(false);
@@ -174,6 +178,7 @@ export default function EditUserModal({ isOpen, onClose, complaint }) {
         alert('เกิดข้อผิดพลาดในการลบภาพ: ' + response.data.message);
       }
     } catch (error) {
+      console.error('Error deleting image:', error);
       alert('เกิดข้อผิดพลาดในการลบภาพ');
     } finally {
       setDeletingImage(false);
@@ -191,10 +196,15 @@ export default function EditUserModal({ isOpen, onClose, complaint }) {
       if (response.data.success) {
         alert('อัปเดตข้อมูลสำเร็จ');
         setReporterInfo(response.data.data);
+        // รีเฟรชข้อมูลในหน้า manage-complaints
+        if (typeof window !== 'undefined' && window.location.pathname.includes('/admin/manage-complaints')) {
+          window.location.reload();
+        }
       } else {
         alert('เกิดข้อผิดพลาดในการอัปเดตข้อมูล');
       }
     } catch (error) {
+      console.error('Error updating info:', error);
       alert('เกิดข้อผิดพลาดในการอัปเดตข้อมูล');
     }
   };
@@ -211,6 +221,14 @@ export default function EditUserModal({ isOpen, onClose, complaint }) {
           ✕
         </button>
         <h2 className="text-xl font-bold mb-4">แก้ไขข้อมูลผู้แจ้ง</h2>
+        {reporterInfo?.status === "ดำเนินการเสร็จสิ้น" && (
+          <div className="alert alert-warning mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <span>เรื่องร้องเรียนนี้ถูกปิดแล้ว แต่คุณยังสามารถแก้ไขข้อมูลได้</span>
+          </div>
+        )}
         <div>
           {loading ? (
             <p>กำลังโหลด...</p>
@@ -454,9 +472,12 @@ export default function EditUserModal({ isOpen, onClose, complaint }) {
                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                      {reporterInfo.images.map((image, index) => (
                        <div key={index} className="relative group">
-                         <img
+                         <Image
                            src={image}
                            alt={`ภาพปัญหา ${index + 1}`}
+                           width={200}
+                           height={128}
+                           sizes="(max-width: 768px) 50vw, 200px"
                            className="w-full h-32 object-cover rounded-md border cursor-pointer hover:opacity-80 transition-opacity"
                            onClick={() => {
                              setSelectedImage(image);
