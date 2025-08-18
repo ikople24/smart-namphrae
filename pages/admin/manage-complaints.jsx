@@ -138,26 +138,20 @@ export default function ManageComplaintsPage() {
 
   const handleResendNotification = async (complaintId) => {
     try {
-
-      
       if (!complaintId) {
         throw new Error("ไม่พบ complaintId");
       }
 
-      
-
       const confirmed = confirm("คุณแน่ใจหรือไม่ว่าต้องการส่งแจ้งเตือนอีกครั้ง?");
       if (!confirmed) return;
 
-              setLoading(true);
+      setLoading(true);
       
       const res = await fetch("/api/submittedreports/resend-notification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ complaintId }),
       });
-
-      
 
       if (!res.ok) {
         let errorMessage = "Failed to resend notification";
@@ -171,6 +165,11 @@ export default function ManageComplaintsPage() {
         }
         
         console.error("❌ API Error Details:", errorDetails);
+        
+        // จัดการกับ validation errors
+        if (errorDetails.details && Array.isArray(errorDetails.details)) {
+          errorMessage = "ข้อมูลไม่สมบูรณ์:\n" + errorDetails.details.join("\n");
+        }
         
         if (errorDetails.searchedId) {
           errorMessage += `\n\nSearched ID: ${errorDetails.searchedId}`;
@@ -188,7 +187,15 @@ export default function ManageComplaintsPage() {
 
       const result = await res.json();
       
-      alert("ส่งแจ้งเตือนอีกครั้งสำเร็จ");
+      if (result.success) {
+        if (result.warning) {
+          alert(`✅ ${result.message}\n\n⚠️ ${result.warning}`);
+        } else {
+          alert("ส่งแจ้งเตือนอีกครั้งสำเร็จ");
+        }
+      } else {
+        alert("เกิดข้อผิดพลาดในการส่งแจ้งเตือน: " + (result.error || "Unknown error"));
+      }
       
       // รีเฟรชข้อมูลใหม่
       fetchComplaints();
@@ -200,46 +207,56 @@ export default function ManageComplaintsPage() {
     }
   };
 
-  const handleTestN8nConnection = async () => {
+
+
+
+
+  const handleCleanComplaint = async (complaintId) => {
     try {
       setLoading(true);
 
-      
-      const res = await fetch("/api/test-n8n-connection");
-      const result = await res.json();
-      
-      if (result.success) {
-        alert("✅ การเชื่อมต่อ n8n สำเร็จ\n\nสถานะ: " + result.status + "\nข้อความ: " + result.message);
-      } else {
-        alert("❌ การเชื่อมต่อ n8n ล้มเหลว\n\nข้อผิดพลาด: " + result.error + "\nรายละเอียด: " + result.details);
-      }
-    } catch (error) {
-      console.error("❌ Error testing n8n connection:", error);
-      alert("เกิดข้อผิดพลาดในการทดสอบการเชื่อมต่อ: " + error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleTestComplaintData = async () => {
-    try {
-      setLoading(true);
-
-      
-      const res = await fetch("/api/test-complaint-data", {
+      const res = await fetch("/api/clean-complaint-data", {
         method: "POST",
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ complaintId })
       });
       const result = await res.json();
       
       if (result.success) {
-        alert("✅ การส่งข้อมูลทดสอบสำเร็จ\n\nสถานะ: " + result.status + "\nข้อความ: " + result.message);
+        let message = `🧹 ทำความสะอาดข้อมูลสำหรับ ${complaintId}\n\n`;
+        
+        if (result.hasChanges) {
+          message += `✅ ทำความสะอาด detail สำเร็จ\n\n`;
+          message += `📝 การเปลี่ยนแปลง:\n`;
+          result.changes.forEach((change, index) => {
+            message += `${index + 1}. ${change}\n`;
+          });
+          message += `\n`;
+        } else {
+          message += `✅ ไม่มีการเปลี่ยนแปลง detail\n\n`;
+        }
+        
+        if (result.testResult) {
+          message += `🌐 ทดสอบหลังทำความสะอาด:\n`;
+          message += `- สถานะ: ${result.testResult.status}\n`;
+          message += `- ผลลัพธ์: ${result.testResult.success ? '✅ สำเร็จ' : '❌ ล้มเหลว'}\n`;
+          if (result.testResult.success) {
+            message += `- แจ้งเตือนถูกส่งไปยัง Telegram แล้ว!\n`;
+          } else if (result.testResult.response) {
+            message += `- ข้อความ: ${result.testResult.response}\n`;
+          }
+        }
+        
+        alert(message);
+        
+        // รีเฟรชข้อมูลใหม่
+        fetchComplaints();
       } else {
-        alert("❌ การส่งข้อมูลทดสอบล้มเหลว\n\nข้อผิดพลาด: " + result.error + "\nรายละเอียด: " + result.details);
+        alert("❌ การทำความสะอาดล้มเหลว\n\nข้อผิดพลาด: " + result.error);
       }
     } catch (error) {
-      console.error("❌ Error testing complaint data:", error);
-      alert("เกิดข้อผิดพลาดในการทดสอบข้อมูล: " + error.message);
+      console.error("❌ Error cleaning complaint:", error);
+      alert("เกิดข้อผิดพลาดในการทำความสะอาด: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -332,47 +349,7 @@ export default function ManageComplaintsPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <button
-              className="btn btn-outline btn-info btn-sm"
-              onClick={handleTestN8nConnection}
-              disabled={loading}
-              title="ทดสอบการเชื่อมต่อ n8n"
-            >
-              {loading ? (
-                <span className="loading loading-spinner loading-xs"></span>
-              ) : (
-                "🧪 ทดสอบ n8n"
-              )}
-            </button>
-            <button
-              className="btn btn-outline btn-warning btn-sm"
-              onClick={handleTestComplaintData}
-              disabled={loading}
-              title="ทดสอบการส่งข้อมูล"
-            >
-              {loading ? (
-                <span className="loading loading-spinner loading-xs"></span>
-              ) : (
-                "📤 ทดสอบข้อมูล"
-              )}
-            </button>
-            <button
-              className="btn btn-outline btn-info btn-sm"
-              onClick={async () => {
-                try {
-                  const res = await fetch('/api/test-complaint-data');
-                  const data = await res.json();
 
-                  alert(`ข้อมูลตัวอย่าง: ${data.count} รายการ\nดูข้อมูลใน Console`);
-                } catch (error) {
-                  console.error('Test error:', error);
-                  alert('เกิดข้อผิดพลาดในการทดสอบ');
-                }
-              }}
-              title="ทดสอบข้อมูลฐานข้อมูล"
-            >
-              🗄️ ทดสอบ DB
-            </button>
           </div>
         </div>
         
@@ -734,6 +711,13 @@ export default function ManageComplaintsPage() {
                                 แก้ไขข้อมูล
                               </button>
                               <button
+                                className="btn btn-warning btn-sm"
+                                onClick={() => handleCleanComplaint(complaint.complaintId)}
+                                title="ทำความสะอาด detail และส่งแจ้งเตือน"
+                              >
+                                🧹 Clean & Send
+                              </button>
+                              <button
                                 className="btn btn-success btn-sm"
                                 onClick={() => handleCloseComplaint(complaint._id)}
                               >
@@ -795,6 +779,13 @@ export default function ManageComplaintsPage() {
                                       title="แก้ไขข้อมูลผู้แจ้งและภาพปัญหา"
                                     >
                                       แก้ไขข้อมูล
+                                    </button>
+                                    <button
+                                      className="btn btn-warning btn-sm"
+                                      onClick={() => handleCleanComplaint(complaint.complaintId)}
+                                      title="ทำความสะอาด detail และส่งแจ้งเตือน"
+                                    >
+                                      🧹 Clean & Send
                                     </button>
                                     <button
                                       className="btn btn-error btn-sm"

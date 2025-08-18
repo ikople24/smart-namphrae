@@ -31,6 +31,8 @@ const ImageUploads = ({ onChange }) => {
 
   const handleFiles = async (e) => {
     const selectedFiles = Array.from(e.target.files);
+    
+    // ตรวจสอบจำนวนไฟล์
     if (previews.length >= 3) {
       const confirmReplace = window.confirm("คุณอัปโหลดครบ 3 ภาพแล้ว ต้องการแทนที่ภาพแรกหรือไม่?");
       if (confirmReplace) {
@@ -41,16 +43,22 @@ const ImageUploads = ({ onChange }) => {
           const removedUrl = updatedPreviews[0];
           updatedPreviews[0] = cloudUrl;
           setPreviews(updatedPreviews);
-          onChange?.(updatedPreviews);
-          deleteFromCloudinary(removedUrl);
+          // ตรวจสอบว่า onChange เป็น function และส่ง array ที่ถูกต้อง
+          if (typeof onChange === 'function') {
+            onChange(updatedPreviews.filter(url => url && typeof url === 'string'));
+          }
+          if (removedUrl) {
+            deleteFromCloudinary(removedUrl);
+          }
         } catch (err) {
           console.error("Upload error:", err);
+          alert("เกิดข้อผิดพลาดในการอัปโหลดภาพ: " + err.message);
         }
       }
       return;
     }
 
-    const remainingSlots = 3 - files.length;
+    const remainingSlots = 3 - previews.length;
     const filesToAdd = selectedFiles.slice(0, remainingSlots);
     const newPreviews = [...previews];
     const newFiles = [...files];
@@ -58,15 +66,22 @@ const ImageUploads = ({ onChange }) => {
     for (const file of filesToAdd) {
       try {
         const cloudUrl = await uploadToCloudinary(file);
-        newPreviews.push(cloudUrl);
+        if (cloudUrl && typeof cloudUrl === 'string') {
+          newPreviews.push(cloudUrl);
+        }
       } catch (err) {
         console.error("Upload error:", err);
+        alert("เกิดข้อผิดพลาดในการอัปโหลดภาพ: " + err.message);
       }
     }
 
     setPreviews(newPreviews);
     setFiles([...newFiles, ...filesToAdd]);
-    onChange?.(newPreviews);
+    
+    // ตรวจสอบว่า onChange เป็น function และส่ง array ที่ถูกต้อง
+    if (typeof onChange === 'function') {
+      onChange(newPreviews.filter(url => url && typeof url === 'string'));
+    }
   };
 
   const removeImage = (index) => {
@@ -75,9 +90,15 @@ const ImageUploads = ({ onChange }) => {
 
     newPreviews.splice(index, 1);
     setPreviews(newPreviews);
-    onChange?.(newPreviews);
+    
+    // ตรวจสอบว่า onChange เป็น function และส่ง array ที่ถูกต้อง
+    if (typeof onChange === 'function') {
+      onChange(newPreviews.filter(url => url && typeof url === 'string'));
+    }
 
-    deleteFromCloudinary(removedUrl);
+    if (removedUrl && typeof removedUrl === 'string') {
+      deleteFromCloudinary(removedUrl);
+    }
   };
 
   return (
