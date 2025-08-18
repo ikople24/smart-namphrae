@@ -34,8 +34,16 @@ export default async function handler(req, res) {
     console.log("📥 Incoming body:", req.body);
     console.log("🆔 Generated complaintId:", complaintId);
     
+    // ทำความสะอาด detail field ก่อนบันทึก
+    const cleanDetail = (req.body.detail || '').replace(/[\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim();
+    
+    // ลบ updatedAt ที่ส่งมาจาก frontend เพราะจะถูกสร้างโดย Mongoose
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { updatedAt, ...dataToSave } = req.body;
+    
     const newReport = await SubmittedReport.create({
-      ...req.body,
+      ...dataToSave,
+      detail: cleanDetail,
       complaintId,
       lastNotificationSent: new Date(),
       notificationCount: 1,
@@ -62,8 +70,8 @@ export default async function handler(req, res) {
         
         // ข้อมูลเพิ่มเติม
         _id: newReport._id.toString(),
-        createdAt: newReport.createdAt.toISOString(),
-        updatedAt: newReport.updatedAt.toISOString(),
+        createdAt: newReport.createdAt instanceof Date ? newReport.createdAt.toISOString() : new Date().toISOString(),
+        updatedAt: newReport.updatedAt instanceof Date ? newReport.updatedAt.toISOString() : new Date().toISOString(),
         
         // ข้อมูลการส่งครั้งแรก
         resendNotification: false,
