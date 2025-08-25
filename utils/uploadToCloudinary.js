@@ -1,18 +1,31 @@
-export async function uploadToCloudinary(file) {
+export async function uploadToCloudinary(fileOrBase64) {
   try {
-    console.log("📤 Uploading image to Cloudinary:", file.name);
+    console.log("📤 Uploading image to Cloudinary");
     
-    const resized = await resizeImage(file);
-
-    const formData = new FormData();
-    formData.append("file", resized);
-    formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET);
-
     if (!process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || !process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME) {
       throw new Error("Cloudinary configuration missing");
     }
 
-    const res = await fetch(
+    let uploadData;
+    
+    // Check if input is base64 string or File object
+    if (typeof fileOrBase64 === 'string' && fileOrBase64.startsWith('data:')) {
+      // Handle base64 string - upload directly
+      uploadData = fileOrBase64;
+    } else if (fileOrBase64 instanceof File) {
+      // Handle File object - for client-side usage
+      const resizedFile = await resizeImage(fileOrBase64);
+      uploadData = resizedFile;
+    } else {
+      throw new Error("Invalid input: must be a File object or base64 string");
+    }
+
+    // Create FormData and upload
+    const formData = new FormData();
+    formData.append("file", uploadData);
+    formData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET);
+    
+    const response = await fetch(
       `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
       {
         method: "POST",
@@ -20,13 +33,15 @@ export async function uploadToCloudinary(file) {
       }
     );
 
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.error?.message || `Upload failed with status ${res.status}`);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || `Upload failed with status ${response.status}`);
     }
 
-    const data = await res.json();
+    const data = await response.json();
     console.log("✅ Image uploaded successfully:", data.secure_url);
+    
+    // Return URL string for backward compatibility
     return data.secure_url;
   } catch (error) {
     console.error("❌ Upload to Cloudinary failed:", error);
@@ -34,7 +49,45 @@ export async function uploadToCloudinary(file) {
   }
 }
 
-// ฟังก์ชันช่วยปรับขนาดภาพก่อนอัปโหลด
+// Convert base64 string to File object (for client-side usage)
+function base64ToFile(base64String) {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = function() {
+      // Resize image if needed
+      const maxWidth = 1024;
+      const maxHeight = 1024;
+      let width = img.width;
+      let height = img.height;
+
+      if (width > maxWidth || height > maxHeight) {
+        if (width > height) {
+          height *= maxWidth / width;
+          width = maxWidth;
+        } else {
+          width *= maxHeight / height;
+          height = maxHeight;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      canvas.toBlob((blob) => {
+        const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
+        resolve(file);
+      }, 'image/jpeg');
+    };
+    
+    img.src = base64String;
+  });
+}
+
+// ฟังก์ชันช่วยปรับขนาดภาพก่อนอัปโหลด (for File objects)
 function resizeImage(file, maxWidth = 1024, maxHeight = 1024) {
   return new Promise((resolve) => {
     const img = new Image();

@@ -28,18 +28,10 @@ export default async function handler(req, res) {
     }
 
     // อัปโหลดภาพไปยัง Cloudinary
-    const uploadResult = await uploadToCloudinary(imageData);
+    const imageUrl = await uploadToCloudinary(imageData);
     
-    if (!uploadResult.success) {
-      return res.status(500).json({ 
-        success: false, 
-        message: "เกิดข้อผิดพลาดในการอัปโหลดภาพ",
-        error: uploadResult.error 
-      });
-    }
-
     // เพิ่มภาพใหม่เข้าไปใน array
-    const updatedImages = [...(report.images || []), uploadResult.url];
+    const updatedImages = [...(report.images || []), imageUrl];
     
     // อัปเดตข้อมูล
     const updatedReport = await SubmittedReport.findByIdAndUpdate(
@@ -55,11 +47,11 @@ export default async function handler(req, res) {
       success: true, 
       message: "อัปโหลดภาพสำเร็จ",
       data: updatedReport,
-      newImageUrl: uploadResult.url
+      newImageUrl: imageUrl
     });
 
   } catch (error) {
-
+    console.error("Error in upload-complaint-image:", error);
     return res.status(500).json({ 
       success: false, 
       message: "เกิดข้อผิดพลาดในการอัปโหลดภาพ",
