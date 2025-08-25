@@ -128,21 +128,34 @@ export default function EditUserModal({ isOpen, onClose, complaint }) {
       reader.onload = async (e) => {
         const imageData = e.target.result;
         
-        // อัปโหลดภาพ
-        const response = await axios.post('/api/upload-complaint-image', {
-          reportId: complaint._id,
-          imageData: imageData
-        });
+        try {
+          // อัปโหลดภาพ
+          const response = await axios.post('/api/upload-complaint-image', {
+            reportId: complaint._id,
+            imageData: imageData
+          });
 
-        if (response.data.success) {
-          // อัปเดตข้อมูลใน state
-          setReporterInfo(prev => ({
-            ...prev,
-            images: response.data.data.images
-          }));
-          alert('อัปโหลดภาพสำเร็จ');
-        } else {
-          alert('เกิดข้อผิดพลาดในการอัปโหลดภาพ: ' + response.data.message);
+          if (response.data.success) {
+            // อัปเดตข้อมูลใน state
+            setReporterInfo(prev => ({
+              ...prev,
+              images: response.data.data.images
+            }));
+            alert('อัปโหลดภาพสำเร็จ');
+          } else {
+            alert('เกิดข้อผิดพลาดในการอัปโหลดภาพ: ' + response.data.message);
+          }
+        } catch (uploadError) {
+          console.error('Error uploading image:', uploadError);
+          let errorMessage = 'เกิดข้อผิดพลาดในการอัปโหลดภาพ';
+          
+          if (uploadError.response?.data?.message) {
+            errorMessage += ': ' + uploadError.response.data.message;
+          } else if (uploadError.message) {
+            errorMessage += ': ' + uploadError.message;
+          }
+          
+          alert(errorMessage);
         }
       };
       reader.readAsDataURL(file);
