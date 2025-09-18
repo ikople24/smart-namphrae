@@ -51,7 +51,7 @@ const LocationConfirm = ({
       <div className="form-control bg-blue-50 p-3 rounded-md border border-blue-200">
         <label className="flex items-center gap-2 cursor-pointer w-full justify-between">
           <span className="label-text text-base font-medium text-gray-700">
-            กดปุ่มเพื่อใช้ตำแหน่งปัจจุบันของคุณ
+            กดปุ่มเพื่อใช้แจ้งตำแหน่งจุดคำร้อง
           </span>
           <input
             id="toggle-location"
