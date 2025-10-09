@@ -8,7 +8,7 @@ import {
   Legend
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
-import { FaCheckCircle, FaListUl, FaChartBar, FaCalendarAlt, FaArrowUp, FaArrowDown, FaMap } from 'react-icons/fa';
+import { FaCheckCircle, FaListUl, FaChartBar, FaCalendarAlt, FaArrowUp, FaArrowDown, FaMap, FaDownload } from 'react-icons/fa';
 import MapView from '@/components/MapView';
 import Link from 'next/link';
 
@@ -77,6 +77,52 @@ export default function SummaryByCategory() {
 
   const chartColors = generateColors(summary.length);
 
+  // ฟังก์ชัน export ข้อมูลเป็น CSV
+  const exportToCSV = () => {
+    // เตรียมข้อมูลสำหรับ export
+    const exportData = rawData.map((item, index) => ({
+      'ลำดับ': index + 1,
+      'รหัสคำร้อง': item.complaintId || 'ไม่ระบุ',
+      'ประเภทปัญหา': item.category || 'ไม่ระบุ',
+      'วันที่แจ้ง': item.createdAt ? new Date(item.createdAt).toLocaleDateString('th-TH') : 'ไม่ระบุ',
+      'เวลาที่แจ้ง': item.createdAt ? new Date(item.createdAt).toLocaleTimeString('th-TH') : 'ไม่ระบุ',
+      'สถานะ': item.status || 'ไม่ระบุ',
+      'รายละเอียด': item.detail || 'ไม่มีรายละเอียด',
+      'ตำแหน่งที่แจ้ง': item.location ? `${item.location.lat}, ${item.location.lng}` : 'ไม่ระบุ',
+      'ผู้แจ้ง': item.fullName || 'ไม่ระบุ',
+      'เบอร์ติดต่อ': item.phone || 'ไม่ระบุ',
+      'ชุมชน': item.community || 'ไม่ระบุ',
+      'เจ้าหน้าที่': item.officer || 'ไม่ระบุ'
+    }));
+
+    // สร้าง CSV content
+    const headers = Object.keys(exportData[0] || {});
+    const csvContent = [
+      headers.join(','),
+      ...exportData.map(row => 
+        headers.map(header => {
+          const value = row[header];
+          // ใส่ quotes รอบค่าที่มี comma หรือ newline
+          if (typeof value === 'string' && (value.includes(',') || value.includes('\n') || value.includes('"'))) {
+            return `"${value.replace(/"/g, '""')}"`;
+          }
+          return value;
+        }).join(',')
+      )
+    ].join('\n');
+
+    // สร้างและดาวน์โหลดไฟล์
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `complaints_summary_${year}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
@@ -107,20 +153,32 @@ export default function SummaryByCategory() {
               </p>
             </div>
             
-            {/* Year Selector */}
-            <div className="flex items-center gap-3">
-              <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <FaCalendarAlt className="text-primary" />
-                เลือกปี:
-              </label>
-              <select
-                className="select select-bordered select-sm w-32 bg-white"
-                value={year}
-                onChange={(e) => setYear(e.target.value)}
+            {/* Year Selector and Export Button */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <FaCalendarAlt className="text-primary" />
+                  เลือกปี:
+                </label>
+                <select
+                  className="select select-bordered select-sm w-32 bg-white"
+                  value={year}
+                  onChange={(e) => setYear(e.target.value)}
+                >
+                  <option value="2024">2024</option>
+                  <option value="2025">2025</option>
+                </select>
+              </div>
+              
+              {/* Export Button */}
+              <button
+                onClick={exportToCSV}
+                className="btn btn-primary btn-sm gap-2 bg-green-600 hover:bg-green-700 border-green-600 hover:border-green-700"
+                disabled={loading || rawData.length === 0}
               >
-                <option value="2024">2024</option>
-                <option value="2025">2025</option>
-              </select>
+                <FaDownload />
+                Export ทั้งหมด ({rawData.length})
+              </button>
             </div>
           </div>
         </div>
