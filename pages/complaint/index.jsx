@@ -1,6 +1,6 @@
 //pages/complaint/index.jsx
 import Head from "next/head";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import useComplaintStore from "@/stores/useComplaintStore";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useProblemOptionStore } from "@/stores/useProblemOptionStore";
@@ -11,6 +11,7 @@ import { Autoplay } from "swiper/modules";
 import CardModalDetail from "@/components/CardModalDetail";
 import { ChevronDown } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
+import { getOptimizedCloudinaryUrl } from "@/utils/uploadToCloudinary";
 
 export default function ComplaintListPage() {
   const { user } = useUser();
@@ -31,14 +32,17 @@ export default function ComplaintListPage() {
 
   useEffect(() => {
     const loadData = async () => {
-      console.log("📤 เรียก API /api/complaints...");
-      await fetchComplaints("อยู่ระหว่างดำเนินการ");
-      await fetchProblemOptions();
-      console.log("✅ ดึง complaints เสร็จ");
+      console.log("📤 เรียก API ทั้งหมดพร้อมกัน...");
+      // ⚡ โหลด API ทั้งหมดพร้อมกันแบบ parallel แทน sequential
+      await Promise.all([
+        fetchComplaints("อยู่ระหว่างดำเนินการ"),
+        fetchProblemOptions(),
+        fetchMenu()
+      ]);
+      console.log("✅ ดึงข้อมูลทั้งหมดเสร็จ");
       setLoading(false);
     };
     loadData();
-    fetchMenu();
   }, [fetchComplaints, fetchMenu, fetchProblemOptions]);
 
   return (
@@ -51,10 +55,8 @@ export default function ComplaintListPage() {
           {loading ? (
             <p>กำลังโหลดข้อมูล...</p>
           ) : (
-            complaints
-              .slice()
-              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-              .map((item) => {
+            // ⚡ ไม่ต้อง sort ที่ frontend เพราะ API sort ให้แล้ว (createdAt: -1)
+            complaints.map((item) => {
                 return (
                 <div
                   key={item._id}
@@ -89,6 +91,8 @@ export default function ComplaintListPage() {
                                 <img
                                   src={found.iconUrl}
                                   alt={prob}
+                                  loading="lazy"
+                                  decoding="async"
                                   className="w-4 h-4"
                                 />
                               )}
@@ -99,8 +103,10 @@ export default function ComplaintListPage() {
                       </div>
                       {item.images?.length === 1 ? (
                         <img
-                          src={item.images[0]}
+                          src={getOptimizedCloudinaryUrl(item.images[0], 500)}
                           alt="ภาพร้องเรียน"
+                          loading="lazy"
+                          decoding="async"
                           className={`object-cover w-full h-full ${
                             item.category === "สวัสดิการสังคม" ? "blur-sm" : ""
                           } cursor-pointer`}
@@ -123,8 +129,10 @@ export default function ComplaintListPage() {
                           {item.images?.map((imgUrl, index) => (
                             <SwiperSlide key={index}>
                               <img
-                                src={imgUrl}
+                                src={getOptimizedCloudinaryUrl(imgUrl, 500)}
                                 alt={`ภาพที่ ${index + 1}`}
+                                loading="lazy"
+                                decoding="async"
                                 className={`object-cover w-full h-full ${
                                   item.category === "สวัสดิการสังคม" ? "blur-sm" : ""
                                 } cursor-pointer`}
@@ -147,6 +155,8 @@ export default function ComplaintListPage() {
                                       ?.Prob_pic || "/default-icon.png"
                                   }
                                   alt={item.category}
+                                  loading="lazy"
+                                  decoding="async"
                                   className="w-10 h-10 object-contain"
                                 />
                               )}

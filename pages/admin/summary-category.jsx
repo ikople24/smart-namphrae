@@ -18,7 +18,7 @@ import { useEffect, useState } from "react";
 export default function SummaryByCategory() {
   const [summary, setSummary] = useState([]);
   const [rawData, setRawData] = useState([]);
-  const [year, setYear] = useState("2024");
+  const [year, setYear] = useState("2025");
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('chart'); // 'chart' or 'map'
 

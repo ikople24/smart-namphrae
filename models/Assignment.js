@@ -32,4 +32,7 @@ const AssignmentSchema = new mongoose.Schema({
   },
 });
 
+// ⚡ เพิ่ม index เพื่อเร่งความเร็วการค้นหาด้วย complaintId
+AssignmentSchema.index({ complaintId: 1 });
+
 export default mongoose.models.Assignment || mongoose.model('Assignment', AssignmentSchema);

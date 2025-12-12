@@ -42,4 +42,8 @@ const SubmittedReportSchema = new mongoose.Schema({
   },
 });
 
+// ⚡ เพิ่ม index เพื่อเร่งความเร็วการ query
+SubmittedReportSchema.index({ status: 1, createdAt: -1 });
+SubmittedReportSchema.index({ createdAt: -1 });
+
 export default mongoose.models.SubmittedReport || mongoose.model('SubmittedReport', SubmittedReportSchema);

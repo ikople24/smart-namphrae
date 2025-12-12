@@ -32,7 +32,7 @@ export const useMenuStore = create<MenuStoreState>((set) => ({
       console.log("🔍 Menu data received:", data);
       console.log("🔍 Menu data length:", data.length);
       console.log("🔍 Menu Prob_names:", data.map((item: any) => item.Prob_name));
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // ⚡ ลบ delay เทียมออกเพื่อเพิ่มความเร็ว
       set({ menu: data, menuLoading: false, imgLoaded: new Array(data.length).fill(false) });
     } catch (error) {
       console.error("Error fetching menu:", error);

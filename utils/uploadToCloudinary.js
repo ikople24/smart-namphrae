@@ -1,3 +1,21 @@
+/**
+ * ⚡ แปลง Cloudinary URL ให้โหลดรูปที่ optimize แล้ว (เล็กลง, เร็วขึ้น)
+ * @param {string} url - Cloudinary URL
+ * @param {number} width - ความกว้างที่ต้องการ (default: 400px สำหรับ thumbnail)
+ * @param {string} quality - คุณภาพรูป (default: auto)
+ * @returns {string} - Optimized URL
+ */
+export function getOptimizedCloudinaryUrl(url, width = 400, quality = 'auto') {
+  if (!url || typeof url !== 'string') return url;
+  
+  // ตรวจสอบว่าเป็น Cloudinary URL หรือไม่
+  if (!url.includes('cloudinary.com')) return url;
+  
+  // แทรก transformation หลัง /upload/
+  const transformation = `w_${width},q_${quality},f_auto,c_limit`;
+  return url.replace('/upload/', `/upload/${transformation}/`);
+}
+
 export async function uploadToCloudinary(fileOrBase64) {
   try {
     console.log("📤 Uploading image to Cloudinary");

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { FaFilter, FaEye, FaEyeSlash, FaInfoCircle } from 'react-icons/fa';
+import { FaFilter, FaEye, FaEyeSlash, FaInfoCircle, FaMapMarkedAlt } from 'react-icons/fa';
 import { useMenuStore } from '@/stores/useMenuStore';
 import Image from 'next/image';
 
@@ -24,13 +24,32 @@ const categoryColors = {
   'อื่นๆ': '#6b7280', // gray
 };
 
+// สีสำหรับแต่ละ polygon ขอบเขตหมู่บ้าน
+const boundaryColors = [
+  '#3b82f6', // blue
+  '#10b981', // emerald
+  '#f59e0b', // amber
+  '#ef4444', // red
+  '#8b5cf6', // violet
+  '#ec4899', // pink
+  '#06b6d4', // cyan
+  '#84cc16', // lime
+  '#f97316', // orange
+  '#6366f1', // indigo
+  '#14b8a6', // teal
+];
+
 const MapViewInner = ({ data, year }) => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
+  const geoJsonLayerRef = useRef(null);
+  const initialFitDoneRef = useRef(false); // ติดตามว่า fit bounds ครั้งแรกทำแล้วหรือยัง
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedMarker, setSelectedMarker] = useState(null);
+  const [geoJsonData, setGeoJsonData] = useState(null);
+  const [showBoundary, setShowBoundary] = useState(true);
   
   const { menu, fetchMenu } = useMenuStore();
 
@@ -123,6 +142,19 @@ const MapViewInner = ({ data, year }) => {
     fetchMenu();
   }, [fetchMenu]);
 
+  // โหลด GeoJSON data สำหรับแสดง boundary
+  useEffect(() => {
+    fetch('/cmu_namphare.geojson')
+      .then(res => res.json())
+      .then(data => {
+        console.log('🗺️ GeoJSON loaded:', data);
+        setGeoJsonData(data);
+      })
+      .catch(err => {
+        console.error('❌ Error loading GeoJSON:', err);
+      });
+  }, []);
+
   // Debug logging
   useEffect(() => {
     console.log('🔍 Menu Data:', menu);
@@ -165,8 +197,8 @@ const MapViewInner = ({ data, year }) => {
       shadowUrl: '/leaflet/marker-shadow.png',
     });
 
-    // สร้างแผนที่
-    const map = L.map(mapRef.current).setView([13.7563, 100.5018], 10); // กรุงเทพฯ
+    // สร้างแผนที่ - ตั้งค่าเริ่มต้นที่ตำบลน้ำแพร่ หางดง เชียงใหม่
+    const map = L.map(mapRef.current).setView([18.71, 98.88], 13); // ต.น้ำแพร่ อ.หางดง จ.เชียงใหม่
 
     // เพิ่ม tile layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -182,6 +214,81 @@ const MapViewInner = ({ data, year }) => {
       }
     };
   }, []);
+
+  // เพิ่ม GeoJSON layer เมื่อข้อมูลพร้อม และ zoom ไปที่ขอบเขต
+  useEffect(() => {
+    if (!mapInstanceRef.current || !geoJsonData) return;
+
+    // ลบ layer เก่าถ้ามี
+    if (geoJsonLayerRef.current) {
+      mapInstanceRef.current.removeLayer(geoJsonLayerRef.current);
+    }
+
+    if (!showBoundary) return;
+
+    // สร้าง GeoJSON layer
+    geoJsonLayerRef.current = L.geoJSON(geoJsonData, {
+      style: (feature) => {
+        const featureIndex = geoJsonData.features.indexOf(feature);
+        return {
+          fillColor: boundaryColors[featureIndex % boundaryColors.length],
+          fillOpacity: 0.2,
+          color: boundaryColors[featureIndex % boundaryColors.length],
+          weight: 2,
+          opacity: 0.8,
+        };
+      },
+      onEachFeature: (feature, layer) => {
+        const props = feature.properties;
+        
+        // เพิ่ม tooltip แสดงชื่อหมู่บ้านเมื่อ hover เท่านั้น
+        layer.bindTooltip(props.title || 'ไม่ระบุ', {
+          permanent: false,
+          direction: 'center',
+          className: 'bg-white px-2 py-1 rounded shadow-lg font-medium text-sm',
+          sticky: true
+        });
+
+        // Hover effect
+        layer.on({
+          mouseover: (e) => {
+            const layer = e.target;
+            layer.setStyle({
+              fillOpacity: 0.4,
+              weight: 3,
+            });
+          },
+          mouseout: (e) => {
+            geoJsonLayerRef.current.resetStyle(e.target);
+          },
+          click: (e) => {
+            // แสดง popup เมื่อคลิกที่ polygon โดยตรง (ไม่ใช่คลิกที่ marker)
+            const popupContent = `
+              <div class="p-3 min-w-[200px]">
+                <h3 class="font-bold text-gray-800 text-lg mb-2">🏘️ ${props.title || 'ไม่ระบุชื่อ'}</h3>
+                <p class="text-gray-600"><strong>ตำบล:</strong> ${props.bondaryor || 'ไม่ระบุ'}</p>
+              </div>
+            `;
+            L.popup()
+              .setLatLng(e.latlng)
+              .setContent(popupContent)
+              .openOn(mapInstanceRef.current);
+          }
+        });
+      }
+    }).addTo(mapInstanceRef.current);
+
+    // Fit map bounds ไปที่ขอบเขต GeoJSON เพื่อให้แสดงกึ่งกลางแผนที่ (ทำครั้งแรกเท่านั้น)
+    if (!initialFitDoneRef.current) {
+      const bounds = geoJsonLayerRef.current.getBounds();
+      if (bounds.isValid()) {
+        mapInstanceRef.current.fitBounds(bounds, { padding: [20, 20] });
+        initialFitDoneRef.current = true; // บันทึกว่าทำ fit bounds ครั้งแรกแล้ว
+      }
+    }
+
+    console.log('🗺️ GeoJSON layer added to map and fitted to bounds');
+  }, [geoJsonData, showBoundary]);
 
   // อัปเดต markers เมื่อข้อมูลเปลี่ยน
   useEffect(() => {
@@ -203,70 +310,32 @@ const MapViewInner = ({ data, year }) => {
     // สร้าง markers ใหม่
     filteredData.forEach(item => {
       if (item.location && item.location.lat && item.location.lng) {
-        const iconUrl = findIconByCategory(item.category);
-        console.log(`🔍 Creating marker for category: "${item.category}" with icon: "${iconUrl}"`);
         const marker = L.marker([item.location.lat, item.location.lng], {
           icon: createCustomIcon(item.category)
         }).addTo(mapInstanceRef.current);
 
-        const isValidIconUrl = iconUrl && (iconUrl.startsWith('http') || iconUrl.startsWith('/'));
-        
-        // สร้าง popup content
-        const popupContent = `
-          <div class="p-4 min-w-[280px]">
-            <div class="flex items-center gap-3 mb-3">
-              <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background: ${categoryColors[item.category] || categoryColors['อื่นๆ']}">
-                ${isValidIconUrl ? `
-                  <img 
-                    src="${iconUrl}" 
-                    alt="${item.category}"
-                    style="width: 16px; height: 16px; object-fit: contain;"
-                    onerror="this.style.display='none'"
-                  />
-                ` : `
-                  <div style="
-                    width: 16px;
-                    height: 16px;
-                    background: white;
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 8px;
-                    font-weight: bold;
-                    color: ${categoryColors[item.category] || categoryColors['อื่นๆ']};
-                  ">
-                    ${item.category.charAt(0)}
-                  </div>
-                `}
-              </div>
-              <h3 class="font-bold text-gray-800">${item.category}</h3>
-            </div>
-            <div class="space-y-2 text-sm">
-              <p><strong>เลขที่:</strong> ${item.complaintId || 'N/A'}</p>
-              <p><strong>ผู้แจ้ง:</strong> ${item.fullName || 'ไม่ระบุ'}</p>
-              <p><strong>ชุมชน:</strong> ${item.community || 'ไม่ระบุ'}</p>
-              <p><strong>สถานะ:</strong> <span class="px-2 py-1 rounded-full text-xs font-medium" style="background: ${statusColors[item.status] || statusColors['รอดำเนินการ']}; color: white;">${item.status || 'ไม่ระบุ'}</span></p>
-              <p><strong>วันที่:</strong> ${new Date(item.createdAt || item.updatedAt).toLocaleDateString('th-TH')}</p>
-            </div>
-          </div>
-        `;
-
-        marker.bindPopup(popupContent);
-
-        // เพิ่ม event listener
-        marker.on('click', () => {
+        // เพิ่ม event listener - แสดงเฉพาะ panel ด้านล่างเมื่อคลิกที่ marker
+        marker.on('click', (e) => {
+          // ปิด popup และ tooltip ทั้งหมดก่อน
+          mapInstanceRef.current.closePopup();
+          mapInstanceRef.current.eachLayer((layer) => {
+            if (layer.closeTooltip) {
+              layer.closeTooltip();
+            }
+          });
           setSelectedMarker(item);
+          L.DomEvent.stopPropagation(e);
         });
 
         markersRef.current.push(marker);
       }
     });
 
-    // ปรับ zoom ให้เห็น markers ทั้งหมด
-    if (markersRef.current.length > 0) {
+    // ปรับ zoom ให้เห็น markers ทั้งหมด (เฉพาะเมื่อยังไม่เคย fit bounds จาก GeoJSON)
+    if (markersRef.current.length > 0 && !initialFitDoneRef.current) {
       const group = new L.featureGroup(markersRef.current);
       mapInstanceRef.current.fitBounds(group.getBounds().pad(0.1));
+      initialFitDoneRef.current = true;
     }
   }, [data, selectedCategories, findIconByCategory, createCustomIcon]);
 
@@ -308,6 +377,16 @@ const MapViewInner = ({ data, year }) => {
             <FaFilter className="text-primary" />
             กรองหมวดหมู่
             {showFilters ? <FaEyeSlash /> : <FaEye />}
+          </button>
+          
+          {/* Boundary Toggle Button */}
+          <button
+            onClick={() => setShowBoundary(!showBoundary)}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium hover:bg-gray-50 w-full border-b border-gray-200 ${showBoundary ? 'text-blue-600' : 'text-gray-500'}`}
+          >
+            <FaMapMarkedAlt className={showBoundary ? 'text-blue-600' : 'text-gray-400'} />
+            แสดงขอบเขตหมู่บ้าน
+            {showBoundary ? <FaEye className="ml-auto text-blue-600" /> : <FaEyeSlash className="ml-auto text-gray-400" />}
           </button>
 
           {/* Filter Content */}
@@ -387,7 +466,7 @@ const MapViewInner = ({ data, year }) => {
 
       {/* Info Panel */}
       <div className="absolute top-4 right-4 z-[1000]">
-        <div className="bg-white rounded-lg shadow-xl border border-gray-200 p-3">
+        <div className="bg-white rounded-lg shadow-xl border border-gray-200 p-3 max-w-xs">
           <div className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
             <FaInfoCircle className="text-primary" />
             ข้อมูลแผนที่
@@ -397,6 +476,27 @@ const MapViewInner = ({ data, year }) => {
             <p>จำนวนจุด: {markersRef.current.length}</p>
             <p>หมวดหมู่ที่แสดง: {selectedCategories.length || allCategories.length}</p>
           </div>
+          
+          {/* Boundary Legend */}
+          {showBoundary && geoJsonData && geoJsonData.features && (
+            <div className="mt-3 pt-3 border-t border-gray-200">
+              <p className="text-xs font-medium text-gray-700 mb-2 flex items-center gap-1">
+                <FaMapMarkedAlt className="text-blue-500" />
+                ขอบเขตหมู่บ้าน ({geoJsonData.features.length} พื้นที่)
+              </p>
+              <div className="space-y-1 max-h-32 overflow-y-auto">
+                {geoJsonData.features.map((feature, index) => (
+                  <div key={index} className="flex items-center gap-2 text-xs">
+                    <div 
+                      className="w-3 h-3 rounded-sm flex-shrink-0"
+                      style={{ backgroundColor: boundaryColors[index % boundaryColors.length], opacity: 0.6 }}
+                    />
+                    <span className="truncate">{feature.properties?.title || `พื้นที่ ${index + 1}`}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
