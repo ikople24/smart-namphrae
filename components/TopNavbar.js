@@ -2,6 +2,7 @@ import React from "react";
 import Image from "next/image";
 import { UserButton, useUser, SignInButton } from "@clerk/nextjs";
 import AdminDropdownMenu from "./AdminDropdownMenu";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 const TopNavbar = () => {
   const { isSignedIn, user } = useUser();
@@ -23,6 +24,9 @@ const TopNavbar = () => {
         <span className="text-base sm:text-lg md:text-xl lg:text-2xl">SMART-NAMPHRAE</span>
       </div>
       <div className="absolute right-4 flex items-center space-x-2">
+        {/* Language Switcher */}
+        <LanguageSwitcher variant="compact" />
+        
         {isSignedIn ? (
           <>
             {isSignedIn && user && (

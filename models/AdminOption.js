@@ -10,6 +10,10 @@ const AdminOptionSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  label_en: {
+    type: String,
+    default: "",
+  },
   icon_url: {
     type: String,
   },

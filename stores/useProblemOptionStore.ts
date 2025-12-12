@@ -4,6 +4,7 @@ import axios from "axios";
 interface ProblemOption {
   _id: string;
   label: string;
+  labelEn?: string; // English translation
   iconUrl: string;
   category: string;
   active: boolean;

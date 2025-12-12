@@ -21,11 +21,13 @@ export default function AdminPage() {
   }
   const [activeTab, setActiveTab] = useState("problem");
   const [label, setLabel] = useState("");
+  const [labelEn, setLabelEn] = useState(""); // English label
   const [iconUrl, setIconUrl] = useState("");
   const [category, setCategory] = useState("");
   const [filterCategory, setFilterCategory] = useState("ทั้งหมด");
   const isAdminTab = activeTab === "admin";
   const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState(null);
 
   const { menu, fetchMenu, menuLoading } = useMenuStore();
   const { problemOptions, fetchProblemOptions, problemLoading } = useProblemOptionStore();
@@ -44,9 +46,11 @@ export default function AdminPage() {
 
   const handleEdit = (item) => {
     setLabel(item.label);
-    setIconUrl(item.icon_url);
-    setCategory(item.menu_category);
+    setLabelEn(item.labelEn || item.label_en || "");
+    setIconUrl(item.iconUrl || item.icon_url || "");
+    setCategory(item.category || item.menu_category);
     setIsEditing(true);
+    setEditingId(item._id);
   };
 
   const handleDelete = async (id) => {
@@ -83,15 +87,17 @@ export default function AdminPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-     const data = isAdminTab
+    const data = isAdminTab
       ? {
           label,
+          label_en: labelEn,
           icon_url: iconUrl,
           menu_category: category,
           active: true,
         }
       : {
           label,
+          labelEn,
           iconUrl,
           category,
           active: true,
@@ -103,10 +109,12 @@ export default function AdminPage() {
         : "https://express-docker-server-production.up.railway.app";
 
     const endpoint = isAdminTab ? "/api/admin-options" : "/api/problem-options";
+    const method = isEditing ? "PUT" : "POST";
+    const url = isEditing ? `${BASE_URL}${endpoint}/${editingId}` : `${BASE_URL}${endpoint}`;
 
     try {
-      const res = await fetch(`${BASE_URL}${endpoint}`, {
-        method: "POST",
+      const res = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
           "x-app-id": process.env.NEXT_PUBLIC_APP_ID,
@@ -118,9 +126,11 @@ export default function AdminPage() {
         throw new Error("Failed to submit");
       }
 
-      alert("✅ บันทึกข้อมูลสำเร็จ");
+      alert(isEditing ? "✅ แก้ไขข้อมูลสำเร็จ" : "✅ บันทึกข้อมูลสำเร็จ");
       setIsEditing(false);
+      setEditingId(null);
       setLabel("");
+      setLabelEn("");
       setIconUrl("");
       setCategory("");
 
@@ -183,15 +193,27 @@ export default function AdminPage() {
             <div className="card-body">
               <h1 className="text-xl font-bold mb-4">Admin Upload Page</h1>
               <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium">Label</label>
-              <input
-                type="text"
-                value={label}
-                onChange={(e) => setLabel(e.target.value)}
-                className="input input-bordered input-primary w-full"
-                placeholder="เช่น ไฟไม่ติด"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium">Label (ภาษาไทย)</label>
+                <input
+                  type="text"
+                  value={label}
+                  onChange={(e) => setLabel(e.target.value)}
+                  className="input input-bordered input-primary w-full"
+                  placeholder="เช่น ไฟไม่ติด"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium">Label (English)</label>
+                <input
+                  type="text"
+                  value={labelEn}
+                  onChange={(e) => setLabelEn(e.target.value)}
+                  className="input input-bordered input-secondary w-full"
+                  placeholder="e.g. Light not working"
+                />
+              </div>
             </div>
 
             <div>
@@ -248,9 +270,11 @@ export default function AdminPage() {
                 className="btn btn-outline btn-warning"
                 onClick={() => {
                   setLabel("");
+                  setLabelEn("");
                   setIconUrl("");
                   setCategory("");
                   setIsEditing(false);
+                  setEditingId(null);
                 }}
               >
                 ยกเลิก
@@ -259,7 +283,7 @@ export default function AdminPage() {
                 type="submit"
                 className="btn btn-accent ml-2"
               >
-                บันทึกข้อมูล
+                {isEditing ? "อัปเดตข้อมูล" : "บันทึกข้อมูล"}
               </button>
             </div>
               </form>
@@ -316,10 +340,12 @@ export default function AdminPage() {
               )}
             </div>
 
+            <div className="overflow-x-auto">
             <table className="table table-zebra w-full">
               <thead>
                 <tr>
-                  <th className="text-center">Label</th>
+                  <th className="text-center">Label (TH)</th>
+                  <th className="text-center">Label (EN)</th>
                   <th className="text-center">Icon</th>
                   <th className="text-center w-40">Category</th>
                   <th className="text-center">Active</th>
@@ -337,6 +363,7 @@ export default function AdminPage() {
                   .map((item, index) => (
                     <tr key={index}>
                       <td>{item.label}</td>
+                      <td className="text-gray-500">{item.labelEn || <span className="text-gray-300 italic">ยังไม่มี</span>}</td>
                       <td>
                         <img src={item.iconUrl} alt="icon" className="h-8 w-8" />
                       </td>
@@ -362,6 +389,7 @@ export default function AdminPage() {
                   ))}
               </tbody>
             </table>
+            </div>
           </div>
         </>
       )}
@@ -372,15 +400,27 @@ export default function AdminPage() {
             <div className="card-body">
               <h1 className="text-xl font-bold mb-4">Admin Upload Page (เจ้าหน้าที่)</h1>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium">Label</label>
-                  <input
-                    type="text"
-                    value={label}
-                    onChange={(e) => setLabel(e.target.value)}
-                    className="input input-bordered input-primary w-full"
-                    placeholder="เช่น ปรับตำแหน่งหลอดไฟ"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium">Label (ภาษาไทย)</label>
+                    <input
+                      type="text"
+                      value={label}
+                      onChange={(e) => setLabel(e.target.value)}
+                      className="input input-bordered input-primary w-full"
+                      placeholder="เช่น ปรับตำแหน่งหลอดไฟ"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium">Label (English)</label>
+                    <input
+                      type="text"
+                      value={labelEn}
+                      onChange={(e) => setLabelEn(e.target.value)}
+                      className="input input-bordered input-secondary w-full"
+                      placeholder="e.g. Adjust light position"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -437,9 +477,11 @@ export default function AdminPage() {
                     className="btn btn-outline btn-warning"
                     onClick={() => {
                       setLabel("");
+                      setLabelEn("");
                       setIconUrl("");
                       setCategory("");
                       setIsEditing(false);
+                      setEditingId(null);
                     }}
                   >
                     ยกเลิก
@@ -448,7 +490,7 @@ export default function AdminPage() {
                     type="submit"
                     className="btn btn-accent ml-2"
                   >
-                    บันทึกข้อมูล
+                    {isEditing ? "อัปเดตข้อมูล" : "บันทึกข้อมูล"}
                   </button>
                 </div>
               </form>
@@ -496,10 +538,12 @@ export default function AdminPage() {
           <div className="card bg-base-100 shadow">
             <div className="card-body">
               <h2 className="text-lg font-semibold mb-2">รายการผู้ดูแล</h2>
+              <div className="overflow-x-auto">
               <table className="table table-zebra w-full">
                 <thead>
                   <tr>
-                    <th className="text-center">Label</th>
+                    <th className="text-center">Label (TH)</th>
+                    <th className="text-center">Label (EN)</th>
                     <th className="text-center">Icon</th>
                     <th className="text-center">Category</th>
                     <th className="text-center">Active</th>
@@ -517,6 +561,7 @@ export default function AdminPage() {
                     .map((item, index) => (
                       <tr key={index}>
                         <td>{item.label}</td>
+                        <td className="text-gray-500">{item.label_en || <span className="text-gray-300 italic">ยังไม่มี</span>}</td>
                         <td>
                           <img src={item.icon_url} alt="icon" className="h-8 w-8" />
                         </td>
@@ -542,6 +587,7 @@ export default function AdminPage() {
                     ))}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         </>

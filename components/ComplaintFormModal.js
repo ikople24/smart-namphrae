@@ -8,13 +8,15 @@ import ImageUploads from './ImageUploads';
 import Swal from 'sweetalert2';
 import { z } from 'zod';
 import Image from 'next/image';
+import { useTranslation } from '@/hooks/useTranslation';
 const LocationConfirm = dynamic(() => import('./LocationConfirm'), { ssr: false });
 
-const schema = z.object({
-  community: z.string().min(1, 'กรุณาระบุ 1 ชุมชน'),
-});
-
 const ComplaintFormModal = ({ selectedLabel, onClose }) => {
+  const { t, language } = useTranslation();
+  
+  const schema = z.object({
+    community: z.string().min(1, t.form.validation.selectCommunity),
+  });
   const [selectedCommunity, setSelectedCommunity] = useState('');
   const [prefix, setPrefix] = useState('นาย');
   const [fullName, setFullName] = useState('');
@@ -50,9 +52,9 @@ useEffect(() => {
     if (now - lastSubmitTime < 3000) {
       await Swal.fire({
         icon: 'warning',
-        title: 'กรุณารอสักครู่',
-        text: 'กรุณารอ 3 วินาทีก่อนส่งใหม่',
-        confirmButtonText: 'ตกลง'
+        title: t.form.alert.pleaseWait,
+        text: t.form.alert.waitMessage,
+        confirmButtonText: t.form.alert.ok
       });
       return;
     }
@@ -73,31 +75,31 @@ useEffect(() => {
     const validationErrors = [];
     
     if (!reporterValidRef.current) {
-      validationErrors.push('กรุณากรอกข้อมูลผู้แจ้งให้ถูกต้อง');
+      validationErrors.push(t.form.validation.reporterInvalid);
     }
 
     if (!location) {
-      validationErrors.push('กรุณาเลือกตำแหน่ง');
+      validationErrors.push(t.form.validation.selectLocation);
     }
 
     if (imageUrls.length === 0) {
-      validationErrors.push('กรุณาอัปโหลดรูปภาพอย่างน้อย 1 รูป');
+      validationErrors.push(t.form.validation.uploadImage);
     }
 
     if (!fullName.trim()) {
-      validationErrors.push('กรุณากรอกชื่อผู้แจ้ง');
+      validationErrors.push(t.form.validation.enterReporterName);
     }
 
     if (selectedProblems.length === 0) {
-      validationErrors.push('กรุณาเลือกรายการปัญหาอย่างน้อย 1 รายการ');
+      validationErrors.push(t.form.validation.selectProblem);
     }
 
     if (validationErrors.length > 0) {
       await Swal.fire({
         icon: 'warning',
-        title: 'กรุณาตรวจสอบข้อมูล',
+        title: t.form.alert.checkData,
         html: validationErrors.map(error => `• ${error}`).join('<br>'),
-        confirmButtonText: 'ตกลง'
+        confirmButtonText: t.form.alert.ok
       });
       return;
     }
@@ -163,9 +165,9 @@ useEffect(() => {
       
       await Swal.fire({
         icon: 'success',
-        title: 'ส่งเรื่องสำเร็จ',
-        html: `เลขที่เรื่องของคุณคือ <strong>${complaintId}</strong><br><br>ระบบจะแจ้งเตือนไปยังเจ้าหน้าที่ที่เกี่ยวข้องแล้ว`,
-        confirmButtonText: 'ตกลง',
+        title: t.form.alert.success,
+        html: `${t.form.alert.successMessage} <strong>${complaintId}</strong><br><br>${t.form.alert.notifyOfficer}`,
+        confirmButtonText: t.form.alert.ok,
       });
       
       handleClearForm();
@@ -174,9 +176,9 @@ useEffect(() => {
       console.error('❌ เกิดข้อผิดพลาด:', err);
       await Swal.fire({
         icon: 'error',
-        title: 'เกิดข้อผิดพลาด',
-        text: err.message || 'ไม่สามารถส่งข้อมูลได้ กรุณาลองใหม่อีกครั้ง',
-        confirmButtonText: 'ตกลง',
+        title: t.form.alert.error,
+        text: err.message || t.form.alert.errorMessage,
+        confirmButtonText: t.form.alert.ok,
       });
     } finally {
       // ตั้งค่า isSubmitting เป็น false เสมอ ไม่ว่าจะสำเร็จหรือไม่
@@ -222,7 +224,7 @@ useEffect(() => {
       <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto transform transition-all duration-300 opacity-0 scale-95 animate-fade-in">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-base font-semibold text-gray-800">
-            ฟอร์มสำหรับ: {selectedLabel}
+            {t.form.formFor}: {t.categoryMap?.[selectedLabel] || selectedLabel}
           </h2>
           <button
             onClick={onClose}
@@ -239,35 +241,38 @@ useEffect(() => {
             error={formErrors.community?.[0]}
           />
           <div>
-            <p className="font-semibold text-sm text-gray-700">2.เลือกรายการปัญหา</p>
+            <p className="font-semibold text-sm text-gray-700">{t.form.selectProblem}</p>
             <div className="flex flex-wrap gap-2 mt-2">
               {problemOptions
                 .filter(option => option.category === selectedLabel)
-                .map(option => (
-                  <button
-                    key={option._id}
-                    type="button"
-                    className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border whitespace-nowrap ${selectedProblems.includes(option._id) ? 'bg-blue-100 text-black border-blue-300' : 'border-gray-300 text-black hover:bg-gray-100'}`}
-                    onClick={() => {
-                      setSelectedProblems(prev =>
-                        prev.includes(option._id)
-                          ? prev.filter(id => id !== option._id)
-                          : [...prev, option._id]
-                      );
-                    }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Image
-                        src={option.iconUrl}
-                        alt={option.label}
-                        width={20}
-                        height={20}
-                        className="w-5 h-5"
-                      />
-                      <span>{option.label}</span>
-                    </div>
-                  </button>
-                ))}
+                .map(option => {
+                  const displayLabel = language === 'en' && option.labelEn ? option.labelEn : option.label;
+                  return (
+                    <button
+                      key={option._id}
+                      type="button"
+                      className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border whitespace-nowrap ${selectedProblems.includes(option._id) ? 'bg-blue-100 text-black border-blue-300' : 'border-gray-300 text-black hover:bg-gray-100'}`}
+                      onClick={() => {
+                        setSelectedProblems(prev =>
+                          prev.includes(option._id)
+                            ? prev.filter(id => id !== option._id)
+                            : [...prev, option._id]
+                        );
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Image
+                          src={option.iconUrl}
+                          alt={displayLabel}
+                          width={20}
+                          height={20}
+                          className="w-5 h-5"
+                        />
+                        <span>{displayLabel}</span>
+                      </div>
+                    </button>
+                  );
+                })}
             </div>
           </div>
           <ImageUploads onChange={(urls) => setImageUrls(urls)} />
@@ -296,7 +301,7 @@ useEffect(() => {
             disabled={isSubmitting}
             className={`btn btn-outline btn-warning ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            ล้างฟอร์ม
+            {t.form.clearForm}
           </button>
           <button 
             type="submit" 
@@ -304,7 +309,7 @@ useEffect(() => {
             disabled={isSubmitting}
           >
             {isSubmitting && <span className="loading loading-infinity loading-xs mr-2" />}
-            {isSubmitting ? 'กำลังส่ง...' : 'ส่งเรื่อง'}
+            {isSubmitting ? t.form.submitting : t.form.submit}
           </button>
         </div>
         </form>

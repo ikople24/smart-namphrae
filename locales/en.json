@@ -1,0 +1,198 @@
+{
+  "common": {
+    "appName": "SMART-NAMPHRAE",
+    "loading": "Loading...",
+    "close": "Close",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "filter": "Filter",
+    "all": "All",
+    "submit": "Submit",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "yes": "Yes",
+    "no": "No",
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Info"
+  },
+  "nav": {
+    "home": "SMART-NAMPHRAE",
+    "inProgress": "In Progress",
+    "completed": "Completed"
+  },
+  "header": {
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "admin": "Administrator"
+  },
+  "adminMenu": {
+    "settings": "🛠 Settings",
+    "manageUsers": "👥 Manage Users",
+    "manageComplaints": "📋 Manage Complaints",
+    "dashboard": "📊 Dashboard"
+  },
+  "home": {
+    "title": "Report Issue - Quick Alert",
+    "reportIssue": "Report Issue",
+    "selectCategory": "Select Category",
+    "inProgressCount": "In Progress",
+    "completedCount": "Completed",
+    "satisfactionRate": "Satisfaction Rate",
+    "latestToday": "Updated today",
+    "changeFromAvg": "Change",
+    "avgFromSurvey": "Average from survey",
+    "issues": "issues"
+  },
+  "categories": {
+    "streetLight": "Street Lighting",
+    "water": "Water Supply",
+    "road": "Road/Sidewalk",
+    "garbage": "Waste Management",
+    "socialWelfare": "Social Welfare",
+    "other": "Other",
+    "noise": "Noise Pollution",
+    "animal": "Stray Animals",
+    "publicHealth": "Public Health"
+  },
+  "categoryMap": {
+    "ไฟส่องสว่าง": "Street Lighting",
+    "น้ำประปา": "Water Supply",
+    "ถนน/ทางเท้า": "Road/Sidewalk",
+    "ขยะมูลฝอย": "Waste Management",
+    "สวัสดิการสังคม": "Social Welfare",
+    "อื่นๆ": "Other",
+    "เสียงไร้สาย": "Noise Pollution",
+    "สัตว์เลี้ยง": "Stray Animals",
+    "งานสาธารณสุข": "Public Health"
+  },
+  "communityMap": {
+    "บ้านบ่อ": "Ban Bo",
+    "บ้านศาลา": "Ban Sala",
+    "บ้านแพะขวาง": "Ban Phae Khwang",
+    "บ้านน้ำแพร่": "Ban Nam Phrae",
+    "บ้านป่าจี้": "Ban Pa Chi",
+    "บ้านแสนตอ": "Ban Saen To",
+    "บ้านท่าไม้ลุง": "Ban Tha Mai Lung",
+    "บ้านแม่ขนิลใต้": "Ban Mae Khanil Tai",
+    "บ้านดอยถ้ำ": "Ban Doi Tham",
+    "บ้านน้ำบุ่น": "Ban Nam Bun",
+    "บ้านเวียงด้ง": "Ban Wiang Dong"
+  },
+  "complaint": {
+    "title": "Complaint List",
+    "detail": "Details",
+    "status": "Status",
+    "date": "Reported Date",
+    "completedDate": "Completed Date",
+    "location": "Location",
+    "community": "Community/Village",
+    "images": "Images",
+    "beforeImage": "Before",
+    "afterImage": "After",
+    "reporter": "Reporter",
+    "phone": "Phone Number",
+    "problem": "Problem",
+    "problems": "Problems Found"
+  },
+  "status": {
+    "pending": "Pending",
+    "inProgress": "In Progress",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
+  },
+  "map": {
+    "title": "Map",
+    "filterByCategory": "Filter by Category",
+    "showBoundary": "Show Boundary",
+    "hideBoundary": "Hide Boundary",
+    "mapType": "Map Type",
+    "street": "Street",
+    "satellite": "Satellite",
+    "terrain": "Terrain",
+    "legend": "Legend",
+    "zoomIn": "Zoom In",
+    "zoomOut": "Zoom Out"
+  },
+  "form": {
+    "formFor": "Form for",
+    "selectCommunity": "1. Select Community",
+    "selectProblem": "2. Select Problem",
+    "uploadImage": "3. Attach Image 📁 Select images (max 3)",
+    "chooseImage": "Choose",
+    "noImageAttached": "No image attached",
+    "filesUploaded": "files uploaded",
+    "imageSupport": "Supports .jpg, .png files up to 5MB",
+    "problemDetail": "4. Problem Details",
+    "reporterInfo": "5. Reporter Info (will not be displayed)",
+    "phoneNumber": "6. Phone Number",
+    "useLocation": "Click to use current location",
+    "clearForm": "Clear Form",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "prefix": {
+      "mr": "Mr.",
+      "mrs": "Mrs.",
+      "ms": "Ms."
+    },
+    "placeholder": {
+      "detail": "Describe the problem, specify house number or street name to help officers investigate",
+      "phone": "Enter 10 digits",
+      "name": "Full Name"
+    },
+    "validation": {
+      "selectCommunity": "Please select 1 community",
+      "enterName": "Please enter your name",
+      "enterPhone": "Phone number must be 10 digits",
+      "enterDetail": "Please enter problem details",
+      "reporterInvalid": "Please fill in reporter information correctly",
+      "selectLocation": "Please select location",
+      "uploadImage": "Please upload at least 1 image",
+      "enterReporterName": "Please enter reporter name",
+      "selectProblem": "Please select at least 1 problem"
+    },
+    "alert": {
+      "pleaseWait": "Please wait",
+      "waitMessage": "Please wait 3 seconds before resubmitting",
+      "checkData": "Please check your information",
+      "success": "Submitted Successfully",
+      "successMessage": "Your complaint ID is",
+      "notifyOfficer": "The system has notified the relevant officers",
+      "error": "Error Occurred",
+      "errorMessage": "Unable to submit. Please try again",
+      "ok": "OK",
+      "replaceImage": "You have uploaded 3 images. Replace the first one?",
+      "uploadError": "Error uploading image"
+    }
+  },
+  "satisfaction": {
+    "title": "Satisfaction Survey",
+    "question": "How satisfied are you with our service?",
+    "veryGood": "Very Satisfied",
+    "good": "Satisfied",
+    "neutral": "Neutral",
+    "poor": "Dissatisfied",
+    "veryPoor": "Very Dissatisfied",
+    "comment": "Additional Comments",
+    "submit": "Submit Survey",
+    "thankYou": "Thank you for your feedback"
+  },
+  "language": {
+    "th": "Thai",
+    "en": "English",
+    "switchTo": "Switch Language"
+  },
+  "errors": {
+    "networkError": "Network connection error",
+    "serverError": "Server error occurred",
+    "notFound": "Data not found",
+    "unauthorized": "Unauthorized access",
+    "validationError": "Please fill in all required fields"
+  }
+}

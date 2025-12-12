@@ -5,8 +5,10 @@ import {
   Smile,
   BadgeCheck,
 } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const SummaryStats = () => {
+  const { t, language } = useTranslation();
   const [stats, setStats] = useState({
     inProgress: 0,
     completed: 0,
@@ -21,6 +23,16 @@ const SummaryStats = () => {
     const date = new Date(dateStr);
     const now = new Date();
     const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+
+    if (language === 'en') {
+      if (diffDays === 0) return 'Updated today';
+      if (diffDays === 1) return 'Updated yesterday';
+      return `Updated on ${date.toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      })}`;
+    }
 
     if (diffDays === 0) return 'อัปเดตล่าสุดวันนี้';
     if (diffDays === 1) return 'อัปเดตล่าสุดเมื่อวานนี้';
@@ -61,8 +73,8 @@ const SummaryStats = () => {
       <div className="grid grid-cols-2 gap-2 shadow bg-base-400 border border-base-300 rounded-lg w-full sm:hidden">
         {/* กำลังดำเนินการ */}
         <div className="stat p-2">
-          <div className="stat-title text-xs">อยู่ระหว่างดำเนินการ</div>
-          <div className="stat-value text-warning text-base">{`${stats.inProgress} เรื่อง`}</div>
+          <div className="stat-title text-xs">{t.home.inProgressCount}</div>
+          <div className="stat-value text-warning text-base">{`${stats.inProgress} ${t.home.issues}`}</div>
           <div className="stat-desc text-[10px]">{formatDateDesc(stats.latestUpdate)}</div>
           <div className="stat-figure text-warning">
             <Construction className="w-6 h-6" />
@@ -71,18 +83,18 @@ const SummaryStats = () => {
 
         {/* เสร็จสิ้น */}
         <div className="stat p-2">
-          <div className="stat-title text-xs">ดำเนินการเสร็จสิ้น</div>
-          <div className="stat-value text-success text-base">{`${stats.completed} เรื่อง`}</div>
+          <div className="stat-title text-xs">{t.home.completedCount}</div>
+          <div className="stat-value text-success text-base">{`${stats.completed} ${t.home.issues}`}</div>
           <div className="stat-desc text-[10px]">
             {stats.completedChange !== null ? (
               <span>
-                เปลี่ยนแปลง{' '}
+                {t.home.changeFromAvg}{' '}
                 <span className={stats.completedChange > 0 ? 'text-green-500' : 'text-red-500'}>
                   {stats.completedChange > 0 ? '↑' : '↓'} {Math.abs(stats.completedChange)}%
                 </span>
               </span>
             ) : (
-              '⚠️ไม่มีข้อมูลเดือนก่อน'
+              language === 'en' ? '⚠️ No data from last month' : '⚠️ไม่มีข้อมูลเดือนก่อน'
             )}
           </div>
           <div className="stat-figure text-success">
@@ -93,9 +105,9 @@ const SummaryStats = () => {
         {/* ความพึงพอใจ */}
         <div className="stat p-2 col-span-2 flex items-center">
           <div>
-            <div className="stat-title text-xs">ความพึงพอใจรวม</div>
+            <div className="stat-title text-xs">{t.home.satisfactionRate}</div>
             <div className="stat-value text-info text-base">{`${stats.satisfaction}%`}</div>
-            <div className="stat-desc text-[10px]">เฉลี่ยจากแบบประเมิน</div>
+            <div className="stat-desc text-[10px]">{t.home.avgFromSurvey}</div>
           </div>
           <div className="stat-figure text-info">
             <Smile className="w-6 h-6 stroke-current" />
@@ -107,8 +119,8 @@ const SummaryStats = () => {
       <div className="stats shadow-xl bg-base-400 border border-base-300 rounded-lg w-full flex-row flex-nowrap justify-between items-stretch gap-4 hidden sm:flex">
         {/* กำลังดำเนินการ */}
         <div className="stat min-w-0 flex-1">
-          <div className="stat-title text-sm font-semibold">อยู่ระหว่างดำเนินการ</div>
-          <div className="stat-value text-warning text-2xl">{`${stats.inProgress} เรื่อง`}</div>
+          <div className="stat-title text-sm font-semibold">{t.home.inProgressCount}</div>
+          <div className="stat-value text-warning text-2xl">{`${stats.inProgress} ${t.home.issues}`}</div>
           <div className="stat-desc text-xs">{formatDateDesc(stats.latestUpdate)}</div>
           <div className="stat-figure text-warning">
             <Construction className="w-8 h-8 stroke-current" />
@@ -117,18 +129,18 @@ const SummaryStats = () => {
 
         {/* เสร็จสิ้น */}
         <div className="stat min-w-0 flex-1">
-          <div className="stat-title text-sm font-semibold">ดำเนินการเสร็จสิ้น</div>
-          <div className="stat-value text-success text-2xl">{`${stats.completed} เรื่อง`}</div>
+          <div className="stat-title text-sm font-semibold">{t.home.completedCount}</div>
+          <div className="stat-value text-success text-2xl">{`${stats.completed} ${t.home.issues}`}</div>
           <div className="stat-desc text-xs">
             {stats.completedChange !== null ? (
               <span>
-                เปลี่ยนแปลง{' '}
+                {t.home.changeFromAvg}{' '}
                 <span className={stats.completedChange > 0 ? 'text-green-500' : 'text-red-500'}>
                   {stats.completedChange > 0 ? '↑' : '↓'} {Math.abs(stats.completedChange)}%
                 </span>
               </span>
             ) : (
-              '⚠️ไม่มีข้อมูลเดือนก่อน'
+              language === 'en' ? '⚠️ No data from last month' : '⚠️ไม่มีข้อมูลเดือนก่อน'
             )}
           </div>
           <div className="stat-figure text-success">
@@ -138,9 +150,9 @@ const SummaryStats = () => {
 
         {/* ความพึงพอใจ */}
         <div className="stat min-w-0 flex-1">
-          <div className="stat-title text-sm font-semibold">ความพึงพอใจรวม</div>
+          <div className="stat-title text-sm font-semibold">{t.home.satisfactionRate}</div>
           <div className="stat-value text-info text-2xl">{`${stats.satisfaction}%`}</div>
-          <div className="stat-desc text-xs">เฉลี่ยจากแบบประเมิน</div>
+          <div className="stat-desc text-xs">{t.home.avgFromSurvey}</div>
           <div className="stat-figure text-info">
             <Smile className="w-8 h-8" />
           </div>

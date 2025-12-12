@@ -5,12 +5,14 @@ import CompletedCard from "@/components/CardCompleted";
 import { useUser } from "@clerk/nextjs";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useProblemOptionStore } from "@/stores/useProblemOptionStore";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const StatusPage = () => {
   const { user } = useUser();
   const { complaints, fetchComplaints } = useComplaintStore();
   const { menu, fetchMenu } = useMenuStore();
   const { problemOptions, fetchProblemOptions } = useProblemOptionStore();
+  const { t, language } = useTranslation();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [modalData, setModalData] = useState(null);
@@ -99,20 +101,20 @@ const StatusPage = () => {
           className={`tab ${activeYear === "2567" ? "tab-active" : ""}`}
           onClick={() => { setActiveYear("2567"); setCurrentPage(1); }}
         >
-          ปี 2567
+          {language === 'en' ? 'Year 2024' : 'ปี 2567'}
         </button>
         <button
           role="tab"
           className={`tab ${activeYear === "2568" ? "tab-active" : ""}`}
           onClick={() => { setActiveYear("2568"); setCurrentPage(1); }}
         >
-          ปี 2568
+          {language === 'en' ? 'Year 2025' : 'ปี 2568'}
         </button>
       </div>
 
       {loading ? (
         <div className="flex justify-center items-center min-h-[200px]">
-          <p className="text-gray-500">กำลังโหลดข้อมูล...</p>
+          <p className="text-gray-500">{t.common.loading}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 py-4 w-full max-w-4xl mx-auto min-h-screen items-stretch">
@@ -159,7 +161,7 @@ const StatusPage = () => {
         >
           «
         </button>
-        <button className="join-item btn btn-xs">หน้า {currentPage} / {totalPages || 1}</button>
+        <button className="join-item btn btn-xs">{language === 'en' ? 'Page' : 'หน้า'} {currentPage} / {totalPages || 1}</button>
         <button
           className="join-item btn btn-xs"
           disabled={currentPage >= totalPages}
