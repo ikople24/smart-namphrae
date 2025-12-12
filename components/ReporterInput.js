@@ -1,13 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { z } from "zod";
-
-const reporterSchema = z.object({
-  prefix: z.string(),
-  fullName: z.string().min(1, "กรุณากรอกชื่อ-นามสกุล"),
-  phone: z.string()
-    .regex(/^[0-9]{10}$/, "เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลัก"),
-  detail: z.string().min(1, "กรอกรายละเอียดของปัญหา"),
-});
+import { useTranslation } from "@/hooks/useTranslation";
 
 const ReporterInput = ({
   prefix,
@@ -21,10 +14,18 @@ const ReporterInput = ({
   validateTrigger = false,
   setValid = () => {},
 }) => {
+  const { t, language } = useTranslation();
   const [errors, setErrors] = useState({});
 
-  useEffect(() => {
-    if (!validateTrigger) return;
+  const reporterSchema = useMemo(() => z.object({
+    prefix: z.string(),
+    fullName: z.string().min(1, t.form.validation.enterName),
+    phone: z.string()
+      .regex(/^[0-9]{10}$/, t.form.validation.enterPhone),
+    detail: z.string().min(1, t.form.validation.enterDetail),
+  }), [t.form.validation.enterName, t.form.validation.enterPhone, t.form.validation.enterDetail]);
+
+  const validate = useCallback(() => {
     const result = reporterSchema.safeParse({ prefix, fullName, phone, detail });
     if (!result.success) {
       setErrors(result.error.flatten().fieldErrors);
@@ -33,33 +34,38 @@ const ReporterInput = ({
       setErrors({});
       setValid(true);
     }
-  }, [validateTrigger, prefix, fullName, phone, detail, setValid]);
+  }, [reporterSchema, prefix, fullName, phone, detail, setValid]);
+
+  useEffect(() => {
+    if (!validateTrigger) return;
+    validate();
+  }, [validateTrigger, validate]);
 
   return (
     <div className="flex flex-col space-y-2">
       <div className="flex flex-col space-y-2 mt-2">
         <div className="flex justify-between items-center">
           <label className="text-sm font-medium text-gray-800">
-            4.รายละเอียดของปัญหา
+            {t.form.problemDetail}
           </label>
           {errors.detail && <p className="text-sm text-red-500 text-right ml-2">{errors.detail[0]}</p>}
         </div>
         <textarea
           className="textarea w-full bg-blue-50 text-blue-900 border-blue-300 placeholder:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="เติมเกี่ยวกับปัญหา หรือระบุ บ้านเลขที่ หรือชื่อถนน เพื่อให้เจ้าหน้าที่สามารถตรวจสอบได้ง่ายขึ้น"
+          placeholder={t.form.placeholder.detail}
           value={detail}
           onChange={(e) => setDetail(e.target.value)}
         ></textarea>
       </div>
       <div className="flex flex-col space-y-2 mt-2">
         <div className="flex justify-between items-center">
-          <label className="text-sm font-medium text-gray-800">5.ข้อมูลผู้แจ้ง (จะไม่แสดงผลในระบบ)</label>
+          <label className="text-sm font-medium text-gray-800">{t.form.reporterInfo}</label>
             {errors.fullName && <p className="text-sm text-red-500 text-right ml-2">{errors.fullName[0]}</p>}
         </div>
         <div className="flex gap-2">
           <div className="flex flex-col flex-shrink-0">
             <div className="flex justify-between items-center">
-              <label className="sr-only">คำนำหน้า</label>
+              <label className="sr-only">{language === 'en' ? 'Prefix' : 'คำนำหน้า'}</label>
             </div>
             <select
               className="select select-bordered bg-blue-100 text-blue-900 border-blue-300 w-28 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -67,24 +73,24 @@ const ReporterInput = ({
               onChange={(e) => setPrefix(e.target.value)}
             >
               <option value="นาย" className="text-blue-700">
-                นาย
+                {t.form.prefix.mr}
               </option>
               <option value="นาง" className="text-blue-700">
-                นาง
+                {t.form.prefix.mrs}
               </option>
               <option value="น.ส." className="text-blue-700">
-                น.ส.
+                {t.form.prefix.ms}
               </option>
             </select>
           </div>
           <div className="flex flex-1 flex-col">
             <div className="flex justify-between items-center">
-              <label className="sr-only">ชื่อ-นามสกุล</label>
+              <label className="sr-only">{t.form.placeholder.name}</label>
             </div>
             <input
               type="text"
               className="input input-bordered flex-1 bg-blue-50 text-blue-900 border-blue-300 placeholder:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="ชื่อ-นามสกุล"
+              placeholder={t.form.placeholder.name}
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               />
@@ -95,7 +101,7 @@ const ReporterInput = ({
       <div className="flex flex-col space-y-2 mt-2">
         <div className="flex justify-between items-center">
           <label className="text-sm font-medium text-gray-800">
-            6.เบอร์โทรศัพท์
+            {t.form.phoneNumber}
           </label>
           {errors.phone && <p className="text-sm text-red-500 text-right ml-2">{errors.phone[0]}</p>}
         </div>
@@ -103,7 +109,7 @@ const ReporterInput = ({
           <input
             type="tel"
             className="input input-bordered w-full bg-blue-50 text-blue-900 border-blue-300 placeholder:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 pl-10 tabular-nums"
-            placeholder="ระบุตัวเลข 10 หลัก"
+            placeholder={t.form.placeholder.phone}
             inputMode="numeric"
             pattern="\d*"
             minLength="10"

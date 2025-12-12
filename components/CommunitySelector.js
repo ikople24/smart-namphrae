@@ -1,10 +1,15 @@
-const communities  = ['บ้านบ่อ','บ้านศาลา','บ้านแพะขวาง','บ้านน้ำแพร่','บ้านป่าจี้','บ้านแสนตอ','บ้านท่าไม้ลุง','บ้านแม่ขนิลใต้','บ้านดอยถ้ำ','บ้านน้ำบุ่น','บ้านเวียงด้ง'];
+import { useTranslation } from '@/hooks/useTranslation';
 
-const CommunitySelector = ({ selected, onSelect = () => {}, error }) => (
+const communities = ['บ้านบ่อ','บ้านศาลา','บ้านแพะขวาง','บ้านน้ำแพร่','บ้านป่าจี้','บ้านแสนตอ','บ้านท่าไม้ลุง','บ้านแม่ขนิลใต้','บ้านดอยถ้ำ','บ้านน้ำบุ่น','บ้านเวียงด้ง'];
+
+const CommunitySelector = ({ selected, onSelect = () => {}, error }) => {
+  const { t } = useTranslation();
+  
+  return (
     <div className="mb-4">
       <div className="flex py-2 gap-2">
-      <label className="block text-sm font-medium text-gray-800 mb-1">1.เลือกชุมชน</label>
-      {error && <div className="text-red-500 text-sm ml-auto">{error}</div>}
+        <label className="block text-sm font-medium text-gray-800 mb-1">{t.form.selectCommunity}</label>
+        {error && <div className="text-red-500 text-sm ml-auto">{error}</div>}
       </div>
       <div className="flex flex-wrap gap-2">
         {communities.map((c) => (
@@ -18,10 +23,12 @@ const CommunitySelector = ({ selected, onSelect = () => {}, error }) => (
                 : 'bg-blue-100 text-blue-900 hover:bg-blue-200 border-none'
             } transition duration-200 min-w-[120px] max-w-full sm:w-auto`}
           >
-            {c}
+            {t.communityMap?.[c] || c}
           </button>
         ))}
       </div>
     </div>
   );
-export default CommunitySelector
+};
+
+export default CommunitySelector;

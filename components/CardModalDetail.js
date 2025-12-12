@@ -8,10 +8,12 @@ import CardAssignment from "./CardAssignment";
 import CardOfficail from "./CardOfficail";
 import SatisfactionChart from "./SatisfactionChart";
 import { useUser } from "@clerk/nextjs";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function CardModalDetail({ modalData, onClose }) {
   const { menu } = useMenuStore();
   const { problemOptions, fetchProblemOptions } = useProblemOptionStore();
+  const { t, language } = useTranslation();
   const [categoryIcon, setCategoryIcon] = useState(null);
   const [previewImg, setPreviewImg] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -120,7 +122,7 @@ export default function CardModalDetail({ modalData, onClose }) {
                         <span>
                           {new Date(
                             modalData.createdAt || modalData.updatedAt
-                          ).toLocaleDateString("th-TH", {
+                          ).toLocaleDateString(language === 'en' ? "en-US" : "th-TH", {
                             year: "2-digit",
                             month: "short",
                             day: "numeric",
@@ -128,7 +130,7 @@ export default function CardModalDetail({ modalData, onClose }) {
                         </span>
                         {modalData.status && (
                           <span className="border border-yellow-400 text-yellow-400 font-semibold px-3 py-1 rounded-full text-xs bg-yellow-400/10">
-                            ● {modalData.status}
+                            ● {language === 'en' ? (modalData.status === 'อยู่ระหว่างดำเนินการ' ? 'In Progress' : modalData.status === 'ดำเนินการเสร็จสิ้น' ? 'Completed' : modalData.status) : modalData.status}
                           </span>
                         )}
                       </div>
@@ -139,19 +141,20 @@ export default function CardModalDetail({ modalData, onClose }) {
             </div>
           )}
           <div className="px-4 py-2 text-sm text-gray-600 font-semibold flex items-center gap-2 mt-2">
-            เลขที่คำร้อง: <span className="text-black">{modalData.complaintId}</span>
+            {language === 'en' ? 'Complaint ID:' : 'เลขที่คำร้อง:'} <span className="text-black">{modalData.complaintId}</span>
             <button className="ml-auto text-gray-500 hover:text-gray-700">
               <ReceiptText size={18} />
             </button>
           </div>
           <div className="p-4 space-y-2">
             <div className="mb-3">
-              <div className="font-semibold mb-1">ปัญหาที่พบ</div>
+              <div className="font-semibold mb-1">{t.complaint.problems}</div>
               <div className="flex flex-wrap gap-2">
                 {modalData.problems && modalData.problems.length > 0 ? (
                   modalData.problems.map((p, idx) => {
                     const cleanLabel = typeof p === "string" ? p.trim() : "";
                     const matched = problemOptions.find((opt) => opt.label === cleanLabel);
+                    const displayLabel = language === 'en' && matched?.labelEn ? matched.labelEn : cleanLabel;
                     return (
                       <div
                         key={idx}
@@ -160,27 +163,27 @@ export default function CardModalDetail({ modalData, onClose }) {
                         {matched?.iconUrl && (
                           <Image
                             src={matched.iconUrl}
-                            alt={cleanLabel}
+                            alt={displayLabel}
                             width={16}
                             height={16}
                             sizes="16px"
                             className="object-contain"
                           />
                         )}
-                        <span>{cleanLabel}</span>
+                        <span>{displayLabel}</span>
                       </div>
                     );
                   })
                 ) : (
-                  <div className="text-gray-500 text-sm">ไม่มีข้อมูลปัญหาที่พบ</div>
+                  <div className="text-gray-500 text-sm">{language === 'en' ? 'No problems found' : 'ไม่มีข้อมูลปัญหาที่พบ'}</div>
                 )}
               </div>
             </div>
             <div>
-              <div className="font-semibold mb-1">รายละเอียด</div>
+              <div className="font-semibold mb-1">{t.complaint.detail}</div>
               <div className="bg-yellow-50 p-3 text-sm text-gray-700 rounded border">
                 <span>
-                  {modalData.detail || "ไม่มีรายละเอียด"}
+                  {modalData.detail || (language === 'en' ? 'No details' : 'ไม่มีรายละเอียด')}
                 </span>
               </div>
             </div>
@@ -196,7 +199,7 @@ export default function CardModalDetail({ modalData, onClose }) {
                 }}
                 className="btn btn-sm btn-outline"
               >
-                ปิด
+                {t.common.close}
               </button>
             </div>
 

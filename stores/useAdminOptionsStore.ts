@@ -2,8 +2,10 @@ import { create } from 'zustand';
 interface AdminOption {
   _id: string;
   label: string;
+  label_en?: string;
   menu_category: string;
-  option_url: string;
+  icon_url?: string;
+  option_url?: string;
   active: boolean;
   createdAt: string;
 }

@@ -2,6 +2,7 @@ import { CircleCheck } from "lucide-react";
 import ReactCompareImage from 'react-compare-image';
 import { useMemo, useState } from "react";
 import { getOptimizedCloudinaryUrl } from "@/utils/uploadToCloudinary";
+import { useTranslation } from "@/hooks/useTranslation";
 
 /* eslint-disable @next/next/no-img-element */
 
@@ -19,6 +20,7 @@ const CompletedCard = ({
   assignment = null,
 }) => {
   const [previewImg, setPreviewImg] = useState(null);
+  const { t, language } = useTranslation();
 
   // ⚡ ใช้ useMemo แทน useEffect+useState สำหรับ computed values
   const activeIcons = useMemo(() => {
@@ -27,12 +29,13 @@ const CompletedCard = ({
       const found = problemOptions?.find(
         (p) => p?.label?.trim() === problem?.trim()
       );
+      const displayLabel = language === 'en' && found?.labelEn ? found.labelEn : (found?.label ?? problem);
       return {
-        label: found?.label ?? problem,
+        label: displayLabel,
         iconUrl: found?.iconUrl ?? "",
       };
     });
-  }, [problems, problemOptions]);
+  }, [problems, problemOptions, language]);
 
   // ⚡ ใช้ useMemo สำหรับ menu icon
   const menuIcon = useMemo(() => {
@@ -67,11 +70,11 @@ const CompletedCard = ({
               />
             )}
             <h2 className="text-lg font-semibold text-gray-800">
-              {title}
+              {t.categoryMap?.[title] || title}
             </h2>
           </div>
           <div className="text-xs text-gray-500 whitespace-nowrap">
-            วันที่สำเร็จ: {new Date(assignment?.completedAt || updatedAt).toLocaleDateString("th-TH")}
+            {language === 'en' ? 'Completed:' : 'วันที่สำเร็จ:'} {new Date(assignment?.completedAt || updatedAt).toLocaleDateString(language === 'en' ? "en-US" : "th-TH")}
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -101,10 +104,10 @@ const CompletedCard = ({
             onClick={() => setPreviewImg('compare')}
           >
             <div className="absolute top-2 left-2 z-20 bg-black bg-opacity-50 text-white px-2 py-0.5 rounded text-xs">
-              ก่อนดำเนินการ
+              {t.complaint.beforeImage}
             </div>
             <div className="absolute top-2 right-2 z-20 bg-black bg-opacity-50 text-white px-2 py-0.5 rounded text-xs">
-              หลังดำเนินการ
+              {t.complaint.afterImage}
             </div>
             <div className={shouldBlur ? "blur-sm" : ""}>
               <ReactCompareImage
@@ -121,7 +124,7 @@ const CompletedCard = ({
         <div className="flex justify-end mt-2">
           <div className="inline-flex items-center gap-1 border border-green-500 text-green-600 px-3 py-1 rounded-full text-xs">
             <CircleCheck size={14} className="text-green-500" />
-            ดำเนินการเสร็จสิ้น
+            {t.status.completed}
           </div>
         </div>
       </div>

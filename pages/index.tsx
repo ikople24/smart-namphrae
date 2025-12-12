@@ -10,6 +10,7 @@ import { useMenuStore, MenuItem } from "@/stores/useMenuStore";
 import ComplaintFormModal from "@/components/ComplaintFormModal";
 import Footer from "@/components/Footer";
 import SummaryStats from "@/components/SummaryStats";
+import { useTranslation } from "@/hooks/useTranslation";
 
 import { Download } from "lucide-react";
 
@@ -32,18 +33,31 @@ export default function Home() {
 
   const { menu, fetchMenu, menuLoading } = useMenuStore();
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
+  const { t, language } = useTranslation();
 
-  const texts = useMemo(() => [
+  const texts = useMemo(() => language === 'en' ? [
+    "Report Issue - Complaint",
+    "Quick Alert - Report Problem",
+    "Namphrae Municipality",
+    "Smart City Award 2024"
+  ] : [
     "ร้องทุกข์ - ร้องเรียน",
     "แจ้งเหตุด่วน - รายงานปัญหา",
     "เทศบาลตำบลน้ำแพร่พัฒนา",
     "Smart City Award 2024"
-  ], []);
+  ], [language]);
   const [displayText, setDisplayText] = useState("");
   const [textIndex, setTextIndex] = useState(0);
   const [charIndex, setCharIndex] = useState(0);
 
   const [hasFetched, setHasFetched] = useState(false);
+
+  // Reset animation when language changes
+  useEffect(() => {
+    setCharIndex(0);
+    setTextIndex(0);
+    setDisplayText("");
+  }, [language]);
 
   useEffect(() => {
     const currentText = texts[textIndex];
@@ -104,26 +118,30 @@ export default function Home() {
         ) : (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-              {menu.map((item: MenuItem, index) => (
-                <button
-                  key={item._id || index}
-                  className="flex flex-col items-center rounded-xl"
-                  onClick={() => handleOpenModal(item.Prob_name)}
-                >
-                  <div className="w-40 h-40 sm:w-32 sm:h-32 rounded-full overflow-hidden mb-2 transform transition duration-200 hover:scale-105 relative">
-                    <Image
-                      src={item.Prob_pic}
-                      alt={item.Prob_name}
-                      width={128}
-                      height={128}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="text-center text-gray-700 text-sm sm:text-md font-medium">
-                    {item.Prob_name}
-                  </div>
-                </button>
-              ))}
+              {menu.map((item: MenuItem, index) => {
+                const categoryMap = t.categoryMap as Record<string, string>;
+                const translatedName = categoryMap[item.Prob_name] || item.Prob_name;
+                return (
+                  <button
+                    key={item._id || index}
+                    className="flex flex-col items-center rounded-xl"
+                    onClick={() => handleOpenModal(item.Prob_name)}
+                  >
+                    <div className="w-40 h-40 sm:w-32 sm:h-32 rounded-full overflow-hidden mb-2 transform transition duration-200 hover:scale-105 relative">
+                      <Image
+                        src={item.Prob_pic}
+                        alt={translatedName}
+                        width={128}
+                        height={128}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="text-center text-gray-700 text-sm sm:text-md font-medium">
+                      {translatedName}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </>
         )}
@@ -141,7 +159,7 @@ export default function Home() {
             >
               <span className="relative z-10 flex items-center gap-1">
                 <Download size={16} />
-                ติดตั้งแอป
+                {language === 'en' ? 'Install App' : 'ติดตั้งแอป'}
               </span>
             </button>
           </div>

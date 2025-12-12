@@ -12,12 +12,14 @@ import CardModalDetail from "@/components/CardModalDetail";
 import { ChevronDown } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { getOptimizedCloudinaryUrl } from "@/utils/uploadToCloudinary";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function ComplaintListPage() {
   const { user } = useUser();
   const { complaints, fetchComplaints } = useComplaintStore();
   const { menu, fetchMenu } = useMenuStore();
   const { problemOptions, fetchProblemOptions } = useProblemOptionStore();
+  const { t, language } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [expandedIds, setExpandedIds] = useState([]);
   const [modalData, setModalData] = useState(null);
@@ -53,7 +55,7 @@ export default function ComplaintListPage() {
       <div className="w-full flex justify-center px-4 py-6 mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-screen-xl mx-auto w-full min-h-[300px]">
           {loading ? (
-            <p>กำลังโหลดข้อมูล...</p>
+            <p>{t.common.loading}</p>
           ) : (
             // ⚡ ไม่ต้อง sort ที่ frontend เพราะ API sort ให้แล้ว (createdAt: -1)
             complaints.map((item) => {
@@ -70,7 +72,7 @@ export default function ComplaintListPage() {
                     <figure className="md:w-1/2 w-full aspect-[4/3] h-auto relative overflow-hidden">
                       <div className="absolute top-2 right-2 z-10">
                         <span className="px-2 py-1 text-info text-xs font-medium rounded-full bg-white/80 backdrop-blur-md shadow-sm">
-                          {new Date(item.createdAt).toLocaleDateString("th-TH", {
+                          {new Date(item.createdAt).toLocaleDateString(language === 'en' ? "en-US" : "th-TH", {
                             day: "2-digit",
                             month: "short",
                             year: "2-digit",
@@ -82,6 +84,7 @@ export default function ComplaintListPage() {
                           const found = problemOptions.find(
                             (opt) => opt.label === prob
                           );
+                          const displayLabel = language === 'en' && found?.labelEn ? found.labelEn : prob;
                           return (
                             <div
                               key={i}
@@ -90,13 +93,13 @@ export default function ComplaintListPage() {
                               {found?.iconUrl && (
                                 <img
                                   src={found.iconUrl}
-                                  alt={prob}
+                                  alt={displayLabel}
                                   loading="lazy"
                                   decoding="async"
                                   className="w-4 h-4"
                                 />
                               )}
-                              <span>{prob}</span>
+                              <span>{displayLabel}</span>
                             </div>
                           );
                         })}
@@ -161,7 +164,7 @@ export default function ComplaintListPage() {
                                 />
                               )}
                               <div className="text-base md:text-lg font-bold text-gray-900 break-words whitespace-normal">
-                                {item.category}
+                                {t.categoryMap?.[item.category] || item.category}
                               </div>
                             </div>
                             <span className="badge badge-secondary text-xs">{item.community}</span>

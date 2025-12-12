@@ -1,15 +1,17 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { Home, Clock, CheckCircle } from "lucide-react";
-
-const navs = [
-  { label: "SMART-NAMPHRAE", icon: Home, path: "/" },
-  { label: "อยู่ระหว่างดำเนินการ", icon: Clock, path: "/complaint", disabled: false },
-  { label: "ดำเนินการเสร็จสิ้น", icon: CheckCircle, path: "/status", disabled: false },
-];
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function BottomNav() {
   const router = useRouter();
+  const { t } = useTranslation();
+
+  const navs = [
+    { label: t.nav.home, icon: Home, path: "/" },
+    { label: t.nav.inProgress, icon: Clock, path: "/complaint", disabled: false },
+    { label: t.nav.completed, icon: CheckCircle, path: "/status", disabled: false },
+  ];
 
   return (
     <div className="fixed bottom-0 left-0 w-full bg-white/30 backdrop-blur-md border-t border-white/40 shadow-md z-50 flex justify-around items-center h-14 px-safe">

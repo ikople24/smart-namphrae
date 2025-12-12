@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 const problemOptionSchema = new mongoose.Schema({
   label: { type: String, required: true },
+  labelEn: { type: String, default: "" }, // English translation
   iconUrl: { type: String, default: "" },
   category: { type: String, default: "" },
   active: { type: Boolean, default: true },

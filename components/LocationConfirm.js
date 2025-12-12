@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useTranslation } from "@/hooks/useTranslation";
 
 import {
   MapContainer,
@@ -24,6 +25,7 @@ const LocationConfirm = ({
   setLocation,
   formSubmitted,
 }) => {
+  const { t, language } = useTranslation();
   const [loading, setLoading] = useState(false);
   const { BaseLayer } = LayersControl;
 
@@ -38,20 +40,20 @@ const LocationConfirm = ({
         },
         (err) => {
           console.error("Geolocation error:", err);
-          alert("ไม่สามารถเข้าถึงตำแหน่งของคุณได้");
+          alert(language === 'en' ? "Unable to access your location" : "ไม่สามารถเข้าถึงตำแหน่งของคุณได้");
           setLoading(false);
           onToggle(false); // ปิด toggle กลับ
         }
       );
     }
-  }, [useCurrent, onToggle, setLocation]);
+  }, [useCurrent, onToggle, setLocation, language]);
 
   return (
     <div className="space-y-2">
       <div className="form-control bg-blue-50 p-3 rounded-md border border-blue-200">
         <label className="flex items-center gap-2 cursor-pointer w-full justify-between">
           <span className="label-text text-base font-medium text-gray-700">
-            กดปุ่มเพื่อใช้แจ้งตำแหน่งจุดเกิดเหตุ
+            {t.form.useLocation}
           </span>
           <input
             id="toggle-location"
@@ -69,7 +71,7 @@ const LocationConfirm = ({
         </label>
       </div>
 
-      {loading && <p className="text-sm text-gray-500">กำลังดึงตำแหน่ง...</p>}
+      {loading && <p className="text-sm text-gray-500">{language === 'en' ? 'Getting location...' : 'กำลังดึงตำแหน่ง...'}</p>}
 
       {useCurrent && location && (
         <div className="rounded-lg overflow-hidden border border-blue-200 shadow-sm bg-blue-50">
@@ -86,7 +88,7 @@ const LocationConfirm = ({
                 className="custom-layers-control"
               >
                 {/* 🗺️ แผนที่ถนน */}
-                <BaseLayer checked name="แผนที่ถนน">
+                <BaseLayer checked name={language === 'en' ? 'Street Map' : 'แผนที่ถนน'}>
                   <TileLayer
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     attribution="&copy; OpenStreetMap contributors"
@@ -94,7 +96,7 @@ const LocationConfirm = ({
                 </BaseLayer>
 
                 {/* 🛰️ แผนที่ดาวเทียม */}
-                <BaseLayer name="แผนที่ดาวเทียม">
+                <BaseLayer name={language === 'en' ? 'Satellite' : 'แผนที่ดาวเทียม'}>
                   <TileLayer
                     url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
                     attribution="Tiles &copy; Esri"
@@ -115,11 +117,11 @@ const LocationConfirm = ({
                 }}
               >
                 <Popup>
-                  📍 <strong>ตำแหน่งของคุณ</strong>
+                  📍 <strong>{language === 'en' ? 'Your Location' : 'ตำแหน่งของคุณ'}</strong>
                   <br />
-                  ละติจูด: {location.lat.toFixed(6)}
+                  {language === 'en' ? 'Latitude' : 'ละติจูด'}: {location.lat.toFixed(6)}
                   <br />
-                  ลองจิจูด: {location.lng.toFixed(6)}
+                  {language === 'en' ? 'Longitude' : 'ลองจิจูด'}: {location.lng.toFixed(6)}
                 </Popup>
               </Marker>
             </MapContainer>

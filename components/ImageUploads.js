@@ -2,8 +2,10 @@ import Image from "next/image";
 import { useState } from "react";
 import { X } from "lucide-react";
 import { uploadToCloudinary } from "@/utils/uploadToCloudinary";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const ImageUploads = ({ onChange }) => {
+  const { t } = useTranslation();
   const [files, setFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
 
@@ -34,7 +36,7 @@ const ImageUploads = ({ onChange }) => {
     
     // ตรวจสอบจำนวนไฟล์
     if (previews.length >= 3) {
-      const confirmReplace = window.confirm("คุณอัปโหลดครบ 3 ภาพแล้ว ต้องการแทนที่ภาพแรกหรือไม่?");
+      const confirmReplace = window.confirm(t.form.alert.replaceImage);
       if (confirmReplace) {
         const file = selectedFiles[0];
         try {
@@ -52,7 +54,7 @@ const ImageUploads = ({ onChange }) => {
           }
         } catch (err) {
           console.error("Upload error:", err);
-          alert("เกิดข้อผิดพลาดในการอัปโหลดภาพ: " + err.message);
+          alert(t.form.alert.uploadError + ": " + err.message);
         }
       }
       return;
@@ -71,7 +73,7 @@ const ImageUploads = ({ onChange }) => {
         }
       } catch (err) {
         console.error("Upload error:", err);
-        alert("เกิดข้อผิดพลาดในการอัปโหลดภาพ: " + err.message);
+        alert(t.form.alert.uploadError + ": " + err.message);
       }
     }
 
@@ -105,12 +107,12 @@ const ImageUploads = ({ onChange }) => {
     <div className="form-control">
       <label className="label">
         <span className="label-text text-sm font-medium text-gray-800">
-         3.แนบรูปภาพ 📁 เลือกรูปภาพ (ไม่เกิน 3 ภาพ)
+         {t.form.uploadImage}
         </span>
       </label>
       <div className="w-full flex items-center rounded-md border border-blue-200 bg-blue-50 px-4 py-2">
         <label className="btn btn-sm bg-blue-600 hover:bg-blue-700 text-white border-none cursor-pointer">
-          เลือกรูป
+          {t.form.chooseImage}
           <input
             type="file"
             accept="image/*"
@@ -120,11 +122,11 @@ const ImageUploads = ({ onChange }) => {
           />
         </label>
         <span className="ml-4 text-sm text-gray-600">
-          {previews.length > 0 ? `${previews.length} ไฟล์ที่อัปโหลดแล้ว` : "ยังไม่ได้แนบรูป"}
+          {previews.length > 0 ? `${previews.length} ${t.form.filesUploaded}` : t.form.noImageAttached}
         </span>
       </div>
       <p className="text-xs text-gray-500 mt-1">
-        รองรับไฟล์ภาพ .jpg, .png ขนาดไม่เกิน 5MB
+        {t.form.imageSupport}
       </p>
 
       {previews.length > 0 && (
