@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { FaFilter, FaEye, FaEyeSlash, FaInfoCircle, FaMapMarkedAlt } from 'react-icons/fa';
+import { FaFilter, FaEye, FaEyeSlash, FaInfoCircle, FaMapMarkedAlt, FaGlobeAsia, FaMap } from 'react-icons/fa';
 import { useMenuStore } from '@/stores/useMenuStore';
 import Image from 'next/image';
 
@@ -39,17 +39,38 @@ const boundaryColors = [
   '#14b8a6', // teal
 ];
 
+// ประเภทแผนที่
+const MAP_TYPES = {
+  street: {
+    name: 'แผนที่ถนน',
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '© OpenStreetMap contributors',
+  },
+  satellite: {
+    name: 'ดาวเทียม',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: '© Esri, Maxar, Earthstar Geographics',
+  },
+  terrain: {
+    name: 'ภูมิประเทศ',
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    attribution: '© OpenTopoMap contributors',
+  },
+};
+
 const MapViewInner = ({ data, year }) => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
   const geoJsonLayerRef = useRef(null);
+  const tileLayerRef = useRef(null);
   const initialFitDoneRef = useRef(false); // ติดตามว่า fit bounds ครั้งแรกทำแล้วหรือยัง
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedMarker, setSelectedMarker] = useState(null);
   const [geoJsonData, setGeoJsonData] = useState(null);
   const [showBoundary, setShowBoundary] = useState(true);
+  const [mapType, setMapType] = useState('street'); // street, satellite, terrain
   
   const { menu, fetchMenu } = useMenuStore();
 
@@ -144,15 +165,43 @@ const MapViewInner = ({ data, year }) => {
 
   // โหลด GeoJSON data สำหรับแสดง boundary
   useEffect(() => {
-    fetch('/cmu_namphare.geojson')
-      .then(res => res.json())
-      .then(data => {
-        console.log('🗺️ GeoJSON loaded:', data);
+    const loadGeoJSON = async () => {
+      try {
+        // ใช้ API route เพื่อรองรับทั้ง localhost และ production
+        const geoJsonUrl = '/api/geojson/namphrae';
+        
+        console.log('🗺️ Fetching GeoJSON from API:', geoJsonUrl);
+        
+        const res = await fetch(geoJsonUrl);
+        
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        
+        const data = await res.json();
+        console.log('🗺️ GeoJSON loaded successfully:', data);
+        console.log('🗺️ Features count:', data.features?.length);
         setGeoJsonData(data);
-      })
-      .catch(err => {
+      } catch (err) {
         console.error('❌ Error loading GeoJSON:', err);
-      });
+        console.error('❌ Error details:', err.message);
+        
+        // Fallback: ลองโหลดจาก static file ถ้า API ไม่ทำงาน
+        try {
+          console.log('🗺️ Trying fallback: static file...');
+          const fallbackRes = await fetch('/cmu_namphare.geojson');
+          if (fallbackRes.ok) {
+            const fallbackData = await fallbackRes.json();
+            console.log('🗺️ GeoJSON loaded from fallback:', fallbackData);
+            setGeoJsonData(fallbackData);
+          }
+        } catch (fallbackErr) {
+          console.error('❌ Fallback also failed:', fallbackErr);
+        }
+      }
+    };
+    
+    loadGeoJSON();
   }, []);
 
   // Debug logging
@@ -200,9 +249,10 @@ const MapViewInner = ({ data, year }) => {
     // สร้างแผนที่ - ตั้งค่าเริ่มต้นที่ตำบลน้ำแพร่ หางดง เชียงใหม่
     const map = L.map(mapRef.current).setView([18.71, 98.88], 13); // ต.น้ำแพร่ อ.หางดง จ.เชียงใหม่
 
-    // เพิ่ม tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
+    // เพิ่ม tile layer เริ่มต้น
+    const initialTile = MAP_TYPES.street;
+    tileLayerRef.current = L.tileLayer(initialTile.url, {
+      attribution: initialTile.attribution,
       maxZoom: 18,
     }).addTo(map);
 
@@ -214,6 +264,26 @@ const MapViewInner = ({ data, year }) => {
       }
     };
   }, []);
+
+  // เปลี่ยนประเภทแผนที่
+  useEffect(() => {
+    if (!mapInstanceRef.current || !tileLayerRef.current) return;
+
+    const newTile = MAP_TYPES[mapType];
+    if (newTile) {
+      // ลบ tile layer เก่า
+      mapInstanceRef.current.removeLayer(tileLayerRef.current);
+      
+      // เพิ่ม tile layer ใหม่
+      tileLayerRef.current = L.tileLayer(newTile.url, {
+        attribution: newTile.attribution,
+        maxZoom: 18,
+      }).addTo(mapInstanceRef.current);
+      
+      // ย้าย tile layer ไปด้านหลังสุด
+      tileLayerRef.current.bringToBack();
+    }
+  }, [mapType]);
 
   // เพิ่ม GeoJSON layer เมื่อข้อมูลพร้อม และ zoom ไปที่ขอบเขต
   useEffect(() => {
@@ -388,6 +458,46 @@ const MapViewInner = ({ data, year }) => {
             แสดงขอบเขตหมู่บ้าน
             {showBoundary ? <FaEye className="ml-auto text-blue-600" /> : <FaEyeSlash className="ml-auto text-gray-400" />}
           </button>
+
+          {/* Map Type Selector */}
+          <div className="p-2 border-b border-gray-200">
+            <p className="text-xs text-gray-500 mb-2 px-2">ประเภทแผนที่:</p>
+            <div className="flex gap-1">
+              <button
+                onClick={() => setMapType('street')}
+                className={`flex-1 flex flex-col items-center gap-1 px-2 py-2 rounded text-xs transition-colors ${
+                  mapType === 'street' 
+                    ? 'bg-blue-100 text-blue-700 border border-blue-300' 
+                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-transparent'
+                }`}
+              >
+                <FaMap className={mapType === 'street' ? 'text-blue-600' : 'text-gray-400'} />
+                <span>ถนน</span>
+              </button>
+              <button
+                onClick={() => setMapType('satellite')}
+                className={`flex-1 flex flex-col items-center gap-1 px-2 py-2 rounded text-xs transition-colors ${
+                  mapType === 'satellite' 
+                    ? 'bg-blue-100 text-blue-700 border border-blue-300' 
+                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-transparent'
+                }`}
+              >
+                <FaGlobeAsia className={mapType === 'satellite' ? 'text-blue-600' : 'text-gray-400'} />
+                <span>ดาวเทียม</span>
+              </button>
+              <button
+                onClick={() => setMapType('terrain')}
+                className={`flex-1 flex flex-col items-center gap-1 px-2 py-2 rounded text-xs transition-colors ${
+                  mapType === 'terrain' 
+                    ? 'bg-blue-100 text-blue-700 border border-blue-300' 
+                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-transparent'
+                }`}
+              >
+                <FaMapMarkedAlt className={mapType === 'terrain' ? 'text-blue-600' : 'text-gray-400'} />
+                <span>ภูมิประเทศ</span>
+              </button>
+            </div>
+          </div>
 
           {/* Filter Content */}
           {showFilters && (
