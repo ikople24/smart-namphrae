@@ -6,7 +6,7 @@ import getNextSequence from "@/lib/getNextSequence";
 // รายการปัญหาที่มีการจำกัดจำนวนต่อวัน
 const DAILY_LIMITED_PROBLEMS = {
   "ขอรถรับ-ส่งไปโรงพยาบาล": {
-    limit: 2,
+    limit: 3,
     labelEn: "Hospital Transport Request"
   }
 };
