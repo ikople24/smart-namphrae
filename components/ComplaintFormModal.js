@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import CommunitySelector from './CommunitySelector';
 import ReporterInput from './ReporterInput';
@@ -10,6 +10,9 @@ import { z } from 'zod';
 import Image from 'next/image';
 import { useTranslation } from '@/hooks/useTranslation';
 const LocationConfirm = dynamic(() => import('./LocationConfirm'), { ssr: false });
+
+// ปัญหาที่มีการจำกัดจำนวนต่อวัน
+const DAILY_LIMITED_PROBLEMS = ['ขอรถรับ-ส่งไปโรงพยาบาล'];
 
 const ComplaintFormModal = ({ selectedLabel, onClose }) => {
   const { t, language } = useTranslation();
@@ -32,10 +35,46 @@ const ComplaintFormModal = ({ selectedLabel, onClose }) => {
   const reporterValidRef = useRef(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastSubmitTime, setLastSubmitTime] = useState(0);
+  
+  // State สำหรับ daily limit
+  const [dailyLimitStatus, setDailyLimitStatus] = useState({});
 
   const { problemOptions, fetchProblemOptions } = useProblemOptionStore();
 
-useEffect(() => {
+// ฟังก์ชันตรวจสอบ daily limit
+  const checkDailyLimit = useCallback(async (problemLabel) => {
+    try {
+      const res = await fetch(`/api/submittedreports/check-daily-limit?problem=${encodeURIComponent(problemLabel)}`);
+      const data = await res.json();
+      return data;
+    } catch (error) {
+      console.error('Error checking daily limit:', error);
+      return { hasLimit: false };
+    }
+  }, []);
+
+  // โหลด daily limit status เมื่อเปิด modal
+  useEffect(() => {
+    const loadDailyLimits = async () => {
+      const filteredOptions = problemOptions.filter(opt => opt.category === selectedLabel);
+      const limitedProblems = filteredOptions.filter(opt => 
+        DAILY_LIMITED_PROBLEMS.includes(opt.label)
+      );
+
+      const statusMap = {};
+      for (const opt of limitedProblems) {
+        const status = await checkDailyLimit(opt.label);
+        statusMap[opt.label] = status;
+      }
+      setDailyLimitStatus(statusMap);
+    };
+
+    if (problemOptions.length > 0 && selectedLabel) {
+      loadDailyLimits();
+    }
+  }, [problemOptions, selectedLabel, checkDailyLimit]);
+
+  useEffect(() => {
     fetchProblemOptions();
   }, [fetchProblemOptions]);
 
@@ -141,8 +180,9 @@ useEffect(() => {
       
       if (!res.ok) {
         let errorMessage = 'ส่งข้อมูลไม่สำเร็จ';
+        let errorData = null;
         try {
-          const errorData = await res.json();
+          errorData = await res.json();
           errorMessage = errorData.error || errorMessage;
         } catch (parseError) {
           console.error("❌ Failed to parse error response:", parseError);
@@ -152,6 +192,17 @@ useEffect(() => {
           // กรณีส่งซ้ำ
           throw new Error(errorMessage);
         }
+        
+        if (res.status === 429 && errorData?.errorCode === 'DAILY_LIMIT_REACHED') {
+          // กรณีครบ limit วันนี้ - รีเฟรช limit status
+          const status = await checkDailyLimit(errorData.problem);
+          setDailyLimitStatus(prev => ({
+            ...prev,
+            [errorData.problem]: status
+          }));
+          throw new Error(errorMessage);
+        }
+        
         throw new Error(errorMessage);
       }
 
@@ -247,30 +298,69 @@ useEffect(() => {
                 .filter(option => option.category === selectedLabel)
                 .map(option => {
                   const displayLabel = language === 'en' && option.labelEn ? option.labelEn : option.label;
+                  const limitStatus = dailyLimitStatus[option.label];
+                  const isLimitReached = limitStatus?.isLimitReached;
+                  const remaining = limitStatus?.remaining;
+                  const hasLimit = limitStatus?.hasLimit;
+
                   return (
-                    <button
-                      key={option._id}
-                      type="button"
-                      className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border whitespace-nowrap ${selectedProblems.includes(option._id) ? 'bg-blue-100 text-black border-blue-300' : 'border-gray-300 text-black hover:bg-gray-100'}`}
-                      onClick={() => {
-                        setSelectedProblems(prev =>
-                          prev.includes(option._id)
-                            ? prev.filter(id => id !== option._id)
-                            : [...prev, option._id]
-                        );
-                      }}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Image
-                          src={option.iconUrl}
-                          alt={displayLabel}
-                          width={20}
-                          height={20}
-                          className="w-5 h-5"
-                        />
-                        <span>{displayLabel}</span>
-                      </div>
-                    </button>
+                    <div key={option._id} className="flex flex-col items-start">
+                      <button
+                        type="button"
+                        disabled={isLimitReached}
+                        className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border whitespace-nowrap transition-all ${
+                          isLimitReached 
+                            ? 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed opacity-60' 
+                            : selectedProblems.includes(option._id) 
+                              ? 'bg-blue-100 text-black border-blue-300' 
+                              : 'border-gray-300 text-black hover:bg-gray-100'
+                        }`}
+                        onClick={() => {
+                          if (isLimitReached) {
+                            const messageDefault = `วันนี้มีการขอ "${displayLabel}" ครบ ${limitStatus?.limit} ครั้งแล้ว กรุณารอวันถัดไป`;
+                            Swal.fire({
+                              icon: 'warning',
+                              title: t.form?.dailyLimit?.limitReachedTitle || 'ครบจำนวนวันนี้แล้ว',
+                              text: messageDefault,
+                              confirmButtonText: t.form.alert.ok
+                            });
+                            return;
+                          }
+                          setSelectedProblems(prev =>
+                            prev.includes(option._id)
+                              ? prev.filter(id => id !== option._id)
+                              : [...prev, option._id]
+                          );
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Image
+                            src={option.iconUrl}
+                            alt={displayLabel}
+                            width={20}
+                            height={20}
+                            className="w-5 h-5"
+                          />
+                          <span>{displayLabel}</span>
+                          {hasLimit && (
+                            <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                              isLimitReached 
+                                ? 'bg-red-100 text-red-600' 
+                                : 'bg-green-100 text-green-600'
+                            }`}>
+                              {isLimitReached 
+                                ? (t.form?.dailyLimit?.full || 'เต็ม') 
+                                : `${remaining}/${limitStatus?.limit}`}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                      {hasLimit && !isLimitReached && (
+                        <span className="text-xs text-gray-500 mt-0.5 ml-2">
+                          {(t.form?.dailyLimit?.remainingToday || 'เหลืออีก {remaining} ครั้งวันนี้').replace('{remaining}', remaining)}
+                        </span>
+                      )}
+                    </div>
                   );
                 })}
             </div>

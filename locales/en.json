@@ -169,6 +169,12 @@
       "ok": "OK",
       "replaceImage": "You have uploaded 3 images. Replace the first one?",
       "uploadError": "Error uploading image"
+    },
+    "dailyLimit": {
+      "limitReachedTitle": "Daily Limit Reached",
+      "limitReachedMessage": "Hospital transport requests have reached the daily limit of 2 times. Please try again tomorrow.",
+      "remainingToday": "{remaining} remaining today",
+      "full": "Full"
     }
   },
   "satisfaction": {

@@ -3,6 +3,14 @@ import dbConnect from "@/lib/dbConnect";
 import SubmittedReport from "@/models/SubmittedReport";
 import getNextSequence from "@/lib/getNextSequence";
 
+// รายการปัญหาที่มีการจำกัดจำนวนต่อวัน
+const DAILY_LIMITED_PROBLEMS = {
+  "ขอรถรับ-ส่งไปโรงพยาบาล": {
+    limit: 2,
+    labelEn: "Hospital Transport Request"
+  }
+};
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
@@ -10,7 +18,40 @@ export default async function handler(req, res) {
     await dbConnect();
     
     // ตรวจสอบการส่งซ้ำโดยดูจากข้อมูลที่สำคัญ
-    const { fullName, phone, community, category } = req.body;
+    const { fullName, phone, community, category, problems } = req.body;
+
+    // ตรวจสอบ daily limit สำหรับปัญหาที่มีการจำกัด
+    if (problems && Array.isArray(problems)) {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999);
+
+      for (const problem of problems) {
+        const limitConfig = DAILY_LIMITED_PROBLEMS[problem];
+        if (limitConfig) {
+          const todayCount = await SubmittedReport.countDocuments({
+            problems: problem,
+            createdAt: { 
+              $gte: startOfDay, 
+              $lte: endOfDay 
+            }
+          });
+
+          if (todayCount >= limitConfig.limit) {
+            return res.status(429).json({ 
+              success: false, 
+              error: `วันนี้มีการ "${problem}" ครบ ${limitConfig.limit} ครั้งแล้ว กรุณารอวันถัดไป`,
+              errorCode: "DAILY_LIMIT_REACHED",
+              problem,
+              limit: limitConfig.limit,
+              todayCount
+            });
+          }
+        }
+      }
+    }
     
     // ตรวจสอบว่ามีรายงานที่คล้ายกันใน 5 นาทีที่ผ่านมาหรือไม่
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);

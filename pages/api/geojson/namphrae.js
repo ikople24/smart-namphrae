@@ -18,3 +18,4 @@ export default function handler(req, res) {
     res.status(500).json({ error: 'Failed to load GeoJSON data', details: error.message });
   }
 }
+
