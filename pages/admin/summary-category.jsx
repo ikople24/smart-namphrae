@@ -8,9 +8,10 @@ import {
   Legend
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
-import { FaCheckCircle, FaListUl, FaChartBar, FaCalendarAlt, FaArrowUp, FaArrowDown, FaMap, FaDownload } from 'react-icons/fa';
+import { FaTrophy, FaListUl, FaChartBar, FaCalendarAlt, FaArrowUp, FaArrowDown, FaMap, FaDownload, FaSmileBeam } from 'react-icons/fa';
 import MapView from '@/components/MapView';
 import Link from 'next/link';
+import { getThaiFiscalYear } from '@/lib/fiscalYear';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 import { useEffect, useState } from "react";
@@ -18,7 +19,10 @@ import { useEffect, useState } from "react";
 export default function SummaryByCategory() {
   const [summary, setSummary] = useState([]);
   const [rawData, setRawData] = useState([]);
-  const [year, setYear] = useState("2025");
+  const [satisfaction, setSatisfaction] = useState(null);
+  const currentFiscalYearThai = getThaiFiscalYear(new Date());
+  const fiscalYearOptions = Array.from({ length: 5 }, (_, i) => String(currentFiscalYearThai - i)); // last 5 FYs
+  const [year, setYear] = useState(String(currentFiscalYearThai)); // year = Thai fiscal year (พ.ศ.)
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('chart'); // 'chart' or 'map'
 
@@ -26,9 +30,16 @@ export default function SummaryByCategory() {
     async function fetchData() {
       setLoading(true);
       try {
-        const endpoint = year === "2025" ? `/api/submittedreports` : `/api/submittedreports_${year}`;
-        const res = await fetch(endpoint);
-        const data = await res.json();
+        const [complaintsRes, statsRes] = await Promise.all([
+          fetch(`/api/complaints/fiscal-year?fiscalYear=${encodeURIComponent(year)}&role=admin`),
+          fetch(`/api/submittedreports/stats?fiscalYear=${encodeURIComponent(year)}`)
+        ]);
+
+        const complaintsJson = await complaintsRes.json();
+        const statsJson = await statsRes.json();
+
+        const data = complaintsJson?.success && Array.isArray(complaintsJson?.data) ? complaintsJson.data : [];
+        setSatisfaction(typeof statsJson?.satisfaction === 'number' ? statsJson.satisfaction : null);
 
         // นับจำนวนตาม category
         const countByCategory = data.reduce((acc, item) => {
@@ -47,6 +58,7 @@ export default function SummaryByCategory() {
         setRawData(data); // เก็บข้อมูลดิบสำหรับแผนที่
       } catch (error) {
         console.error('Error fetching data:', error);
+        setSatisfaction(null);
       } finally {
         setLoading(false);
       }
@@ -56,7 +68,7 @@ export default function SummaryByCategory() {
   }, [year]);
 
   const total = summary.reduce((sum, item) => sum + item.count, 0);
-  const topCategory = summary.sort((a, b) => b.count - a.count)[0]?.category || "-";
+  const topCategory = [...summary].sort((a, b) => b.count - a.count)[0]?.category || "-";
   const categoryCount = summary.length;
 
   // สร้างสีสันสำหรับกราฟ
@@ -116,7 +128,7 @@ export default function SummaryByCategory() {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `complaints_summary_${year}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `complaints_summary_fiscal_${year}_${new Date().toISOString().split('T')[0]}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -158,15 +170,18 @@ export default function SummaryByCategory() {
               <div className="flex items-center gap-3">
                 <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                   <FaCalendarAlt className="text-primary" />
-                  เลือกปี:
+                  เลือกปีงบประมาณ:
                 </label>
                 <select
                   className="select select-bordered select-sm w-32 bg-white"
                   value={year}
                   onChange={(e) => setYear(e.target.value)}
                 >
-                  <option value="2024">2024</option>
-                  <option value="2025">2025</option>
+                  {fiscalYearOptions.map((fy) => (
+                    <option key={fy} value={fy}>
+                      {fy}
+                    </option>
+                  ))}
                 </select>
               </div>
               
@@ -184,7 +199,7 @@ export default function SummaryByCategory() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="card bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-xl">
             <div className="card-body">
               <div className="flex items-center justify-between">
@@ -193,7 +208,7 @@ export default function SummaryByCategory() {
                   <p className="text-3xl font-bold">{total.toLocaleString()}</p>
                   <div className="flex items-center gap-1 mt-2 text-sm opacity-90">
                     <FaArrowUp className="text-green-300" />
-                    <span>ปี {year}</span>
+                    <span>ปีงบประมาณ {year}</span>
                   </div>
                 </div>
                 <div className="text-4xl opacity-80">
@@ -215,7 +230,7 @@ export default function SummaryByCategory() {
                   </div>
                 </div>
                 <div className="text-4xl opacity-80">
-                  <FaCheckCircle />
+                  <FaTrophy />
                 </div>
               </div>
             </div>
@@ -234,6 +249,24 @@ export default function SummaryByCategory() {
                 </div>
                 <div className="text-4xl opacity-80">
                   <FaChartBar />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="card bg-gradient-to-r from-cyan-500 to-cyan-600 text-white shadow-xl">
+            <div className="card-body">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm opacity-90 mb-1">ความพึงพอใจรวม</h3>
+                  <p className="text-3xl font-bold">{satisfaction !== null ? `${satisfaction}%` : '-'}</p>
+                  <div className="flex items-center gap-1 mt-2 text-sm opacity-90">
+                    <FaArrowUp className="text-emerald-200" />
+                    <span>ปีงบประมาณ {year}</span>
+                  </div>
+                </div>
+                <div className="text-4xl opacity-80">
+                  <FaSmileBeam />
                 </div>
               </div>
             </div>
@@ -407,7 +440,7 @@ export default function SummaryByCategory() {
           <div className="card bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200">
             <div className="card-body text-center">
               <p className="text-gray-600">
-                📊 ข้อมูลสรุปประจำปี {year} • อัปเดตล่าสุด: {new Date().toLocaleDateString('th-TH')}
+                📊 ข้อมูลสรุปประจำปีงบประมาณ {year} • อัปเดตล่าสุด: {new Date().toLocaleDateString('th-TH')}
               </p>
             </div>
           </div>

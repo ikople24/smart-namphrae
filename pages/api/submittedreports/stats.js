@@ -15,18 +15,22 @@
 
 import dbConnect from '@/lib/dbConnect';
 import mongoose from 'mongoose';
+import { getFiscalYearRangeThai, getThaiFiscalYear } from '@/lib/fiscalYear';
 
 const REPORT_COLLECTION = 'submittedreports';
+const REPORT_COLLECTION_2024 = 'submittedreports_2024';
 const SATISFACTION_COLLECTION = 'satisfactions'; // adjust if your collection name differs
-
-// a very thin, schema‑less model – all we need for count queries
-const SubmittedReport =
-  mongoose.models.SubmittedReport ||
-  mongoose.model('SubmittedReport', new mongoose.Schema({}, { strict: false, collection: REPORT_COLLECTION }));
 
 const Satisfaction =
   mongoose.models.Satisfaction ||
   mongoose.model('Satisfaction', new mongoose.Schema({}, { strict: false, collection: SATISFACTION_COLLECTION }));
+
+function clampRange(rangeStart, rangeEndExclusive, clampStart, clampEndExclusive) {
+  const start = new Date(Math.max(rangeStart.getTime(), clampStart.getTime()));
+  const endExclusive = new Date(Math.min(rangeEndExclusive.getTime(), clampEndExclusive.getTime()));
+  if (start >= endExclusive) return null;
+  return { start, endExclusive };
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -36,43 +40,99 @@ export default async function handler(req, res) {
   try {
     await dbConnect();
 
-    // 1) completed – documents that have `status` === "ดำเนินการเสร็จสิ้น"
-    // 2) in progress – documents that have `status` === "อยู่ระหว่างดำเนินการ"
-    const completedQuery = { status: 'ดำเนินการเสร็จสิ้น' };
-    const inProgressQuery = { status: 'อยู่ระหว่างดำเนินการ' };
-    const [completed, inProgress] = await Promise.all([
-      SubmittedReport.countDocuments(completedQuery),
-      SubmittedReport.countDocuments(inProgressQuery)
+    // Default: current Thai fiscal year (Oct 1 - Sep 30)
+    const fyFromQueryRaw = req.query?.fiscalYear;
+    const fyFromQuery = fyFromQueryRaw ? Number(fyFromQueryRaw) : null;
+    const fiscalYearThai = Number.isFinite(fyFromQuery) ? fyFromQuery : getThaiFiscalYear(new Date());
+    const { start: fyStart, endExclusive: fyEndExclusive } = getFiscalYearRangeThai(fiscalYearThai);
+
+    const mainCol = mongoose.connection.db.collection(REPORT_COLLECTION);
+    const legacy2024Col = mongoose.connection.db.collection(REPORT_COLLECTION_2024);
+
+    // 1) completed – documents that have `status` === "ดำเนินการเสร็จสิ้น"
+    // 2) in progress – documents that have `status` === "อยู่ระหว่างดำเนินการ"
+    const completedQuery = { status: 'ดำเนินการเสร็จสิ้น', createdAt: { $gte: fyStart, $lt: fyEndExclusive } };
+    const inProgressQuery = { status: 'อยู่ระหว่างดำเนินการ', createdAt: { $gte: fyStart, $lt: fyEndExclusive } };
+
+    const [completedMain, completedLegacy, inProgressMain, inProgressLegacy] = await Promise.all([
+      mainCol.countDocuments(completedQuery),
+      legacy2024Col.countDocuments(completedQuery),
+      mainCol.countDocuments(inProgressQuery),
+      legacy2024Col.countDocuments(inProgressQuery)
     ]);
+
+    const completed = (completedMain || 0) + (completedLegacy || 0);
+    const inProgress = (inProgressMain || 0) + (inProgressLegacy || 0);
 
     const now = new Date();
     const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     const startOfPreviousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const endOfPreviousMonth = new Date(startOfCurrentMonth.getTime() - 1);
 
-    const previousMonthCompleted = await SubmittedReport.countDocuments({
-      status: 'ดำเนินการเสร็จสิ้น',
-      createdAt: { $gte: startOfPreviousMonth, $lte: endOfPreviousMonth }
-    });
+    const prevMonthClamped = clampRange(startOfPreviousMonth, startOfCurrentMonth, fyStart, fyEndExclusive);
+    const currentMonthClamped = clampRange(startOfCurrentMonth, startOfNextMonth, fyStart, fyEndExclusive);
 
-    // // ─── DEBUG LOGS ────────────────────────────────────────────────────────────
-    // console.log('✅ Completed (current all‑time):', completed);
-    // console.log('📆 Completed previous month:', previousMonthCompleted);
-    // // ───────────────────────────────────────────────────────────────────────────
+    const [previousMonthCompletedMain, previousMonthCompletedLegacy, currentMonthCompletedMain, currentMonthCompletedLegacy] =
+      await Promise.all([
+        prevMonthClamped
+          ? mainCol.countDocuments({
+              status: 'ดำเนินการเสร็จสิ้น',
+              createdAt: { $gte: prevMonthClamped.start, $lt: prevMonthClamped.endExclusive }
+            })
+          : 0,
+        prevMonthClamped
+          ? legacy2024Col.countDocuments({
+              status: 'ดำเนินการเสร็จสิ้น',
+              createdAt: { $gte: prevMonthClamped.start, $lt: prevMonthClamped.endExclusive }
+            })
+          : 0,
+        currentMonthClamped
+          ? mainCol.countDocuments({
+              status: 'ดำเนินการเสร็จสิ้น',
+              createdAt: { $gte: currentMonthClamped.start, $lt: currentMonthClamped.endExclusive }
+            })
+          : 0,
+        currentMonthClamped
+          ? legacy2024Col.countDocuments({
+              status: 'ดำเนินการเสร็จสิ้น',
+              createdAt: { $gte: currentMonthClamped.start, $lt: currentMonthClamped.endExclusive }
+            })
+          : 0
+      ]);
+
+    const previousMonthCompleted =
+      (previousMonthCompletedMain || 0) + (previousMonthCompletedLegacy || 0);
+    const currentMonthCompleted =
+      (currentMonthCompletedMain || 0) + (currentMonthCompletedLegacy || 0);
 
     const completedChange = previousMonthCompleted > 0
-      ? Math.round(((completed - previousMonthCompleted) / previousMonthCompleted) * 100)
+      ? Math.round(((currentMonthCompleted - previousMonthCompleted) / previousMonthCompleted) * 100)
       : null;
 
-    const latestInProgressDoc = await SubmittedReport.findOne(inProgressQuery)
-      .sort({ updatedAt: -1 })
-      .select({ updatedAt: 1 });
-    const latestUpdate = latestInProgressDoc?.updatedAt ?? null;
+    const [latestMain, latestLegacy] = await Promise.all([
+      mainCol
+        .find(inProgressQuery, { projection: { updatedAt: 1 } })
+        .sort({ updatedAt: -1 })
+        .limit(1)
+        .toArray(),
+      legacy2024Col
+        .find(inProgressQuery, { projection: { updatedAt: 1 } })
+        .sort({ updatedAt: -1 })
+        .limit(1)
+        .toArray()
+    ]);
+    const latestUpdateMain = latestMain?.[0]?.updatedAt ? new Date(latestMain[0].updatedAt) : null;
+    const latestUpdateLegacy = latestLegacy?.[0]?.updatedAt ? new Date(latestLegacy[0].updatedAt) : null;
+    const latestUpdate =
+      latestUpdateMain && latestUpdateLegacy
+        ? (latestUpdateMain > latestUpdateLegacy ? latestUpdateMain : latestUpdateLegacy)
+        : latestUpdateMain || latestUpdateLegacy || null;
 
     // ---- satisfaction ------------------------------------------------------
     let satisfaction = null; // default – not enough data
     try {
       const stats = await Satisfaction.aggregate([
+        { $match: { createdAt: { $gte: fyStart, $lt: fyEndExclusive } } },
         {
           $group: {
             _id: '$complaintId',
@@ -99,7 +159,8 @@ export default async function handler(req, res) {
       completed,
       completedChange,
       satisfaction,
-      latestUpdate
+      latestUpdate,
+      fiscalYear: fiscalYearThai
     });
   } catch (err) {
     console.error('📊 Stats API error:', err);
