@@ -4,10 +4,13 @@ import MapView from '@/components/MapView';
 import Link from 'next/link';
 import { useMenuStore } from '@/stores/useMenuStore';
 import Image from 'next/image';
+import { getThaiFiscalYear } from '@/lib/fiscalYear';
 
 export default function MapViewPage() {
   const [data, setData] = useState([]);
-  const [year, setYear] = useState("2024");
+  const currentFiscalYearThai = getThaiFiscalYear(new Date());
+  const fiscalYearOptions = Array.from({ length: 5 }, (_, i) => String(currentFiscalYearThai - i)); // last 5 FYs
+  const [year, setYear] = useState(String(currentFiscalYearThai)); // year = Thai fiscal year (พ.ศ.)
   const [loading, setLoading] = useState(true);
   
   const { menu, fetchMenu } = useMenuStore();
@@ -28,10 +31,11 @@ export default function MapViewPage() {
     async function fetchData() {
       setLoading(true);
       try {
-        const endpoint = year === "2025" ? `/api/submittedreports` : `/api/submittedreports_${year}`;
+        const endpoint = `/api/complaints/fiscal-year?fiscalYear=${encodeURIComponent(year)}&role=admin`;
         const res = await fetch(endpoint);
-        const data = await res.json();
-        setData(data);
+        const json = await res.json();
+        const rows = json?.success && Array.isArray(json?.data) ? json.data : [];
+        setData(rows);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -90,15 +94,18 @@ export default function MapViewPage() {
             <div className="flex items-center gap-3">
               <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                 <FaCalendarAlt className="text-primary" />
-                เลือกปี:
+                เลือกปีงบประมาณ:
               </label>
               <select
                 className="select select-bordered select-sm w-32 bg-white"
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
               >
-                <option value="2024">2024</option>
-                <option value="2025">2025</option>
+                {fiscalYearOptions.map((fy) => (
+                  <option key={fy} value={fy}>
+                    {fy}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -154,7 +161,7 @@ export default function MapViewPage() {
             <div className="card-body p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm opacity-90">ปี {year}</h3>
+                  <h3 className="text-sm opacity-90">ปีงบประมาณ {year}</h3>
                   <p className="text-2xl font-bold">{((complaintsWithLocation / totalComplaints) * 100).toFixed(1)}%</p>
                 </div>
                 <div className="text-3xl opacity-80">

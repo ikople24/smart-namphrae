@@ -65,6 +65,9 @@ const MapViewInner = ({ data, year }) => {
   const geoJsonLayerRef = useRef(null);
   const tileLayerRef = useRef(null);
   const initialFitDoneRef = useRef(false); // ติดตามว่า fit bounds ครั้งแรกทำแล้วหรือยัง
+  const latestDataRef = useRef([]);
+  const latestSelectedCategoriesRef = useRef([]);
+  const latestYearRef = useRef(year);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [showFilters, setShowFilters] = useState(false);
   const [selectedMarker, setSelectedMarker] = useState(null);
@@ -73,6 +76,79 @@ const MapViewInner = ({ data, year }) => {
   const [mapType, setMapType] = useState('street'); // street, satellite, terrain
   
   const { menu, fetchMenu } = useMenuStore();
+
+  // Keep latest values for boundary popup without re-creating GeoJSON layer on every data/filter change
+  useEffect(() => {
+    latestDataRef.current = Array.isArray(data) ? data : [];
+  }, [data]);
+
+  useEffect(() => {
+    latestSelectedCategoriesRef.current = Array.isArray(selectedCategories) ? selectedCategories : [];
+  }, [selectedCategories]);
+
+  useEffect(() => {
+    latestYearRef.current = year;
+  }, [year]);
+
+  const escapeHtml = useCallback((value) => {
+    if (value === null || value === undefined) return '';
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }, []);
+
+  const normalizeCommunityName = useCallback((value) => {
+    if (!value) return '';
+    const s = String(value).trim();
+    // GeoJSON title is like "หมู่7-บ้านท่าไม้ลุง" -> community usually stored as "บ้านท่าไม้ลุง"
+    return s
+      .replace(/^หมู่\s*\d+\s*[-–]\s*/u, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }, []);
+
+  const buildCommunitySummary = useCallback((communityTitle) => {
+    const communityName = normalizeCommunityName(communityTitle);
+    const rows = latestDataRef.current;
+    const selectedCats = latestSelectedCategoriesRef.current;
+    const viewRows =
+      Array.isArray(selectedCats) && selectedCats.length > 0
+        ? rows.filter((r) => selectedCats.includes(r.category))
+        : rows;
+
+    const inCommunity = viewRows.filter((r) => {
+      const c = normalizeCommunityName(r.community);
+      if (!c) return false;
+      return c === communityName || normalizeCommunityName(r.community) === communityName;
+    });
+
+    const total = inCommunity.length;
+    const completed = inCommunity.filter((r) => r.status === 'ดำเนินการเสร็จสิ้น' || r.status === 'เสร็จสิ้น').length;
+    const inProgress = inCommunity.filter((r) => r.status === 'อยู่ระหว่างดำเนินการ').length;
+    const otherStatus = total - completed - inProgress;
+
+    const categoryCounts = inCommunity.reduce((acc, r) => {
+      const cat = r.category || 'ไม่ระบุ';
+      acc[cat] = (acc[cat] || 0) + 1;
+      return acc;
+    }, {});
+
+    const topCategories = Object.entries(categoryCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
+
+    return {
+      communityName,
+      total,
+      completed,
+      inProgress,
+      otherStatus,
+      topCategories
+    };
+  }, [normalizeCommunityName]);
 
   // ฟังก์ชันหา icon จาก category (ใช้วิธีเดียวกับ CardModalDetail)
   const findIconByCategory = useCallback((category) => {
@@ -333,10 +409,43 @@ const MapViewInner = ({ data, year }) => {
           },
           click: (e) => {
             // แสดง popup เมื่อคลิกที่ polygon โดยตรง (ไม่ใช่คลิกที่ marker)
+            const summary = buildCommunitySummary(props.title);
+            const yearText = latestYearRef.current ? `ปีงบประมาณ ${escapeHtml(latestYearRef.current)}` : '';
+            const topCatsHtml =
+              summary.topCategories.length > 0
+                ? `
+                  <div class="mt-2">
+                    <div class="text-sm font-semibold text-gray-800 mb-1">Top หมวดที่แจ้ง</div>
+                    <ul class="text-sm text-gray-700 list-disc pl-5">
+                      ${summary.topCategories
+                        .map(([cat, cnt]) => `<li><span class="font-medium">${escapeHtml(cat)}</span> (${cnt})</li>`)
+                        .join('')}
+                    </ul>
+                  </div>
+                `
+                : `<div class="mt-2 text-sm text-gray-500">ไม่มีข้อมูลในชุมชนนี้</div>`;
+
             const popupContent = `
               <div class="p-3 min-w-[200px]">
-                <h3 class="font-bold text-gray-800 text-lg mb-2">🏘️ ${props.title || 'ไม่ระบุชื่อ'}</h3>
-                <p class="text-gray-600"><strong>ตำบล:</strong> ${props.bondaryor || 'ไม่ระบุ'}</p>
+                <h3 class="font-bold text-gray-800 text-lg mb-1">🏘️ ${escapeHtml(props.title || 'ไม่ระบุชื่อ')}</h3>
+                <p class="text-gray-600 mb-2"><strong>ตำบล:</strong> ${escapeHtml(props.bondaryor || 'ไม่ระบุ')}</p>
+                ${yearText ? `<p class="text-gray-500 text-sm mb-2">${yearText}</p>` : ''}
+                <div class="grid grid-cols-3 gap-2 text-center">
+                  <div class="rounded-lg bg-gray-50 p-2">
+                    <div class="text-xs text-gray-500">ทั้งหมด</div>
+                    <div class="text-lg font-bold text-gray-800">${summary.total}</div>
+                  </div>
+                  <div class="rounded-lg bg-amber-50 p-2">
+                    <div class="text-xs text-amber-700">ดำเนินการ</div>
+                    <div class="text-lg font-bold text-amber-700">${summary.inProgress}</div>
+                  </div>
+                  <div class="rounded-lg bg-emerald-50 p-2">
+                    <div class="text-xs text-emerald-700">เสร็จสิ้น</div>
+                    <div class="text-lg font-bold text-emerald-700">${summary.completed}</div>
+                  </div>
+                </div>
+                ${summary.otherStatus > 0 ? `<div class="text-xs text-gray-500 mt-2">อื่นๆ: ${summary.otherStatus}</div>` : ''}
+                ${topCatsHtml}
               </div>
             `;
             L.popup()
@@ -358,7 +467,7 @@ const MapViewInner = ({ data, year }) => {
     }
 
     console.log('🗺️ GeoJSON layer added to map and fitted to bounds');
-  }, [geoJsonData, showBoundary]);
+  }, [geoJsonData, showBoundary, buildCommunitySummary, escapeHtml]);
 
   // อัปเดต markers เมื่อข้อมูลเปลี่ยน
   useEffect(() => {

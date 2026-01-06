@@ -1,24 +1,27 @@
 import CardModalDetail from "@/components/CardModalDetail";
 import { useEffect, useState, useMemo, useCallback } from "react";
-import useComplaintStore from "@/stores/useComplaintStore";
 import CompletedCard from "@/components/CardCompleted";
 import { useUser } from "@clerk/nextjs";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useProblemOptionStore } from "@/stores/useProblemOptionStore";
 import { useTranslation } from "@/hooks/useTranslation";
+import { getThaiFiscalYear } from "@/lib/fiscalYear";
 
 const StatusPage = () => {
   const { user } = useUser();
-  const { complaints, fetchComplaints } = useComplaintStore();
   const { menu, fetchMenu } = useMenuStore();
   const { problemOptions, fetchProblemOptions } = useProblemOptionStore();
   const { t, language } = useTranslation();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [modalData, setModalData] = useState(null);
-  const currentBuddhistYear = new Date().getFullYear() + 543;
-  const [activeYear, setActiveYear] = useState(currentBuddhistYear.toString());
-  const [localComplaints, setLocalComplaints] = useState([]);
+  const currentFiscalYearThai = getThaiFiscalYear(new Date());
+  const yearTabs = useMemo(
+    () => [String(currentFiscalYearThai - 1), String(currentFiscalYearThai)],
+    [currentFiscalYearThai]
+  );
+  const [activeYear, setActiveYear] = useState(String(currentFiscalYearThai));
+  const [fiscalComplaints, setFiscalComplaints] = useState([]);
   const [assignmentsMap, setAssignmentsMap] = useState({});
   const [loading, setLoading] = useState(true);
 
@@ -27,38 +30,38 @@ const StatusPage = () => {
     Promise.all([fetchMenu(), fetchProblemOptions()]);
   }, [fetchMenu, fetchProblemOptions]);
 
-  // ⚡ Fetch complaints ตาม year ที่เลือก
+  // ⚡ Fetch complaints ตาม "ปีงบประมาณ" ที่เลือก (1 ต.ค. - 30 ก.ย.)
   useEffect(() => {
     setLoading(true);
-    if (activeYear === "2567") {
-      fetch("/api/submittedreports_2024")
-        .then((res) => res.json())
-        .then((data) => {
-          setLocalComplaints(data);
-          setLoading(false);
-        })
-        .catch((err) => {
-          console.error("โหลดข้อมูล 2567 ผิดพลาด:", err);
-          setLoading(false);
-        });
-    } else {
-      fetchComplaints("ดำเนินการเสร็จสิ้น", "submittedreports")
-        .then(() => setLoading(false));
-    }
-  }, [activeYear, fetchComplaints]);
+    fetch(
+      `/api/complaints/fiscal-year?fiscalYear=${encodeURIComponent(
+        activeYear
+      )}&status=${encodeURIComponent("ดำเนินการเสร็จสิ้น")}&role=admin`
+    )
+      .then((res) => res.json())
+      .then((json) => {
+        if (json?.success && Array.isArray(json?.data)) {
+          setFiscalComplaints(json.data);
+        } else {
+          setFiscalComplaints([]);
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("โหลดข้อมูลปีงบประมาณผิดพลาด:", err);
+        setFiscalComplaints([]);
+        setLoading(false);
+      });
+  }, [activeYear]);
 
   // ⚡ ใช้ useMemo เพื่อ filter และ sort ข้อมูลแค่ครั้งเดียวเมื่อ data เปลี่ยน
   const dataSource = useMemo(() => {
-    const source = activeYear === "2567" ? localComplaints : complaints;
+    const source = fiscalComplaints;
     if (!Array.isArray(source)) return [];
-    
-    return source
-      .filter((item) => {
-        const year = new Date(item.createdAt).getFullYear();
-        return activeYear === "2567" ? year === 2024 : year === 2025;
-      })
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  }, [activeYear, localComplaints, complaints]);
+
+    // backend already filters by fiscal year and sorts desc; keep a defensive sort here.
+    return [...source].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }, [fiscalComplaints]);
 
   // ⚡ Paginated data
   const paginatedComplaints = useMemo(() => {
@@ -96,20 +99,19 @@ const StatusPage = () => {
   return (
     <>
       <div role="tablist" className="tabs tabs-box justify-center mb-4">
-        <button
-          role="tab"
-          className={`tab ${activeYear === "2567" ? "tab-active" : ""}`}
-          onClick={() => { setActiveYear("2567"); setCurrentPage(1); }}
-        >
-          {language === 'en' ? 'Year 2024' : 'ปี 2567'}
-        </button>
-        <button
-          role="tab"
-          className={`tab ${activeYear === "2568" ? "tab-active" : ""}`}
-          onClick={() => { setActiveYear("2568"); setCurrentPage(1); }}
-        >
-          {language === 'en' ? 'Year 2025' : 'ปี 2568'}
-        </button>
+        {yearTabs.map((y) => (
+          <button
+            key={y}
+            role="tab"
+            className={`tab ${activeYear === y ? "tab-active" : ""}`}
+            onClick={() => {
+              setActiveYear(y);
+              setCurrentPage(1);
+            }}
+          >
+            {language === "en" ? `Fiscal Year ${Number(y) - 543}` : `ปีงบประมาณ ${y}`}
+          </button>
+        ))}
       </div>
 
       {loading ? (
