@@ -32,6 +32,22 @@ function clampRange(rangeStart, rangeEndExclusive, clampStart, clampEndExclusive
   return { start, endExclusive };
 }
 
+function dateFieldToDateExpr(fieldName) {
+  return {
+    $cond: [
+      { $eq: [{ $type: `$${fieldName}` }, 'date'] },
+      `$${fieldName}`,
+      {
+        $dateFromString: {
+          dateString: `$${fieldName}`,
+          onError: null,
+          onNull: null
+        }
+      }
+    ]
+  };
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ success: false, message: 'Method Not Allowed' });
@@ -54,11 +70,22 @@ export default async function handler(req, res) {
     const completedQuery = { status: 'ดำเนินการเสร็จสิ้น', createdAt: { $gte: fyStart, $lt: fyEndExclusive } };
     const inProgressQuery = { status: 'อยู่ระหว่างดำเนินการ', createdAt: { $gte: fyStart, $lt: fyEndExclusive } };
 
+    const legacyCount = async (status, start, endExclusive) => {
+      const rows = await legacy2024Col
+        .aggregate([
+          { $addFields: { __createdAt: dateFieldToDateExpr('createdAt') } },
+          { $match: { status, __createdAt: { $gte: start, $lt: endExclusive } } },
+          { $count: 'count' }
+        ])
+        .toArray();
+      return rows?.[0]?.count ?? 0;
+    };
+
     const [completedMain, completedLegacy, inProgressMain, inProgressLegacy] = await Promise.all([
       mainCol.countDocuments(completedQuery),
-      legacy2024Col.countDocuments(completedQuery),
+      legacyCount('ดำเนินการเสร็จสิ้น', fyStart, fyEndExclusive),
       mainCol.countDocuments(inProgressQuery),
-      legacy2024Col.countDocuments(inProgressQuery)
+      legacyCount('อยู่ระหว่างดำเนินการ', fyStart, fyEndExclusive)
     ]);
 
     const completed = (completedMain || 0) + (completedLegacy || 0);
@@ -80,24 +107,14 @@ export default async function handler(req, res) {
               createdAt: { $gte: prevMonthClamped.start, $lt: prevMonthClamped.endExclusive }
             })
           : 0,
-        prevMonthClamped
-          ? legacy2024Col.countDocuments({
-              status: 'ดำเนินการเสร็จสิ้น',
-              createdAt: { $gte: prevMonthClamped.start, $lt: prevMonthClamped.endExclusive }
-            })
-          : 0,
+        prevMonthClamped ? legacyCount('ดำเนินการเสร็จสิ้น', prevMonthClamped.start, prevMonthClamped.endExclusive) : 0,
         currentMonthClamped
           ? mainCol.countDocuments({
               status: 'ดำเนินการเสร็จสิ้น',
               createdAt: { $gte: currentMonthClamped.start, $lt: currentMonthClamped.endExclusive }
             })
           : 0,
-        currentMonthClamped
-          ? legacy2024Col.countDocuments({
-              status: 'ดำเนินการเสร็จสิ้น',
-              createdAt: { $gte: currentMonthClamped.start, $lt: currentMonthClamped.endExclusive }
-            })
-          : 0
+        currentMonthClamped ? legacyCount('ดำเนินการเสร็จสิ้น', currentMonthClamped.start, currentMonthClamped.endExclusive) : 0
       ]);
 
     const previousMonthCompleted =
@@ -116,9 +133,13 @@ export default async function handler(req, res) {
         .limit(1)
         .toArray(),
       legacy2024Col
-        .find(inProgressQuery, { projection: { updatedAt: 1 } })
-        .sort({ updatedAt: -1 })
-        .limit(1)
+        .aggregate([
+          { $addFields: { __createdAt: dateFieldToDateExpr('createdAt'), __updatedAt: dateFieldToDateExpr('updatedAt') } },
+          { $match: { status: 'อยู่ระหว่างดำเนินการ', __createdAt: { $gte: fyStart, $lt: fyEndExclusive } } },
+          { $sort: { __updatedAt: -1 } },
+          { $limit: 1 },
+          { $project: { updatedAt: '$__updatedAt' } }
+        ])
         .toArray()
     ]);
     const latestUpdateMain = latestMain?.[0]?.updatedAt ? new Date(latestMain[0].updatedAt) : null;

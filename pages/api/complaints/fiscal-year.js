@@ -36,15 +36,43 @@ export default async function handler(req, res) {
     const mainCol = mongoose.connection.db.collection('submittedreports');
     const legacy2024Col = mongoose.connection.db.collection('submittedreports_2024');
 
+    // Legacy collection may store createdAt as string; normalize via aggregation.
+    const legacyPipeline = [
+      {
+        $addFields: {
+          __createdAt: {
+            $cond: [
+              { $eq: [{ $type: '$createdAt' }, 'date'] },
+              '$createdAt',
+              {
+                $dateFromString: {
+                  dateString: '$createdAt',
+                  onError: null,
+                  onNull: null
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        $match: {
+          ...(status ? { status } : {}),
+          __createdAt: { $gte: start, $lt: endExclusive }
+        }
+      },
+      { $set: { createdAt: '$__createdAt' } },
+      { $unset: '__createdAt' },
+      ...(isAdmin ? [] : [{ $unset: ['fullName', 'phone'] }]),
+      { $sort: { createdAt: -1 } }
+    ];
+
     const [mainDocs, legacyDocs] = await Promise.all([
       mainCol
         .find(query, projection ? { projection } : undefined)
         .sort({ createdAt: -1 })
         .toArray(),
-      legacy2024Col
-        .find(query, projection ? { projection } : undefined)
-        .sort({ createdAt: -1 })
-        .toArray()
+      legacy2024Col.aggregate(legacyPipeline).toArray()
     ]);
 
     const merged = [...(Array.isArray(mainDocs) ? mainDocs : []), ...(Array.isArray(legacyDocs) ? legacyDocs : [])].sort(
