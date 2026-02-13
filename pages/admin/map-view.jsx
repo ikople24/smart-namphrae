@@ -5,15 +5,56 @@ import Link from 'next/link';
 import { useMenuStore } from '@/stores/useMenuStore';
 import Image from 'next/image';
 import { getThaiFiscalYear } from '@/lib/fiscalYear';
+import { useRouter } from 'next/router';
 
 export default function MapViewPage() {
   const [data, setData] = useState([]);
   const currentFiscalYearThai = getThaiFiscalYear(new Date());
   const fiscalYearOptions = Array.from({ length: 5 }, (_, i) => String(currentFiscalYearThai - i)); // last 5 FYs
   const [year, setYear] = useState(String(currentFiscalYearThai)); // year = Thai fiscal year (พ.ศ.)
+  const [month, setMonth] = useState(''); // YYYY-MM (Gregorian) or '' for all months
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
   
   const { menu, fetchMenu } = useMenuStore();
+
+  const thaiMonths = [
+    { value: 1, label: "มกราคม", short: "ม.ค." },
+    { value: 2, label: "กุมภาพันธ์", short: "ก.พ." },
+    { value: 3, label: "มีนาคม", short: "มี.ค." },
+    { value: 4, label: "เมษายน", short: "เม.ย." },
+    { value: 5, label: "พฤษภาคม", short: "พ.ค." },
+    { value: 6, label: "มิถุนายน", short: "มิ.ย." },
+    { value: 7, label: "กรกฎาคม", short: "ก.ค." },
+    { value: 8, label: "สิงหาคม", short: "ส.ค." },
+    { value: 9, label: "กันยายน", short: "ก.ย." },
+    { value: 10, label: "ตุลาคม", short: "ต.ค." },
+    { value: 11, label: "พฤศจิกายน", short: "พ.ย." },
+    { value: 12, label: "ธันวาคม", short: "ธ.ค." }
+  ];
+
+  const fiscalYearMonths = (() => {
+    const fyThai = Number(year);
+    if (!Number.isFinite(fyThai)) return [];
+    const fiscalGregorianYear = fyThai - 543;
+    const start = new Date(fiscalGregorianYear - 1, 9, 1, 0, 0, 0, 0); // Oct 1
+    return Array.from({ length: 12 }, (_, i) => {
+      const d = new Date(start.getFullYear(), start.getMonth() + i, 1, 0, 0, 0, 0);
+      const gregYear = d.getFullYear();
+      const monthNum = d.getMonth() + 1;
+      const buddhistYear = gregYear + 543;
+      const value = `${gregYear}-${String(monthNum).padStart(2, '0')}`;
+      const th = thaiMonths[monthNum - 1];
+      return {
+        value,
+        monthNum,
+        gregYear,
+        buddhistYear,
+        label: `${th.short} ${buddhistYear}`,
+        fullLabel: `${th.label} ${buddhistYear}`,
+      };
+    });
+  })();
 
   // ฟังก์ชันหา icon จาก category (ใช้วิธีเดียวกับ CardModalDetail)
   const findIconByCategory = (category) => {
@@ -28,10 +69,19 @@ export default function MapViewPage() {
   }, [fetchMenu]);
 
   useEffect(() => {
+    if (!router.isReady) return;
+    const fyFromQuery = typeof router.query?.fiscalYear === 'string' ? router.query.fiscalYear : null;
+    const monthFromQuery = typeof router.query?.month === 'string' ? router.query.month : null;
+    if (fyFromQuery) setYear(fyFromQuery);
+    if (monthFromQuery) setMonth(monthFromQuery);
+  }, [router.isReady]);
+
+  useEffect(() => {
     async function fetchData() {
       setLoading(true);
       try {
-        const endpoint = `/api/complaints/fiscal-year?fiscalYear=${encodeURIComponent(year)}&role=admin`;
+        const monthParam = month ? `&month=${encodeURIComponent(month)}` : '';
+        const endpoint = `/api/complaints/fiscal-year?fiscalYear=${encodeURIComponent(year)}&role=admin${monthParam}`;
         const res = await fetch(endpoint);
         const json = await res.json();
         const rows = json?.success && Array.isArray(json?.data) ? json.data : [];
@@ -44,7 +94,7 @@ export default function MapViewPage() {
     }
 
     fetchData();
-  }, [year]);
+  }, [year, month]);
 
   const totalComplaints = data.length;
   const complaintsWithLocation = data.filter(item => item.location && item.location.lat && item.location.lng).length;
@@ -104,6 +154,25 @@ export default function MapViewPage() {
                 {fiscalYearOptions.map((fy) => (
                   <option key={fy} value={fy}>
                     {fy}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                <FaCalendarAlt className="text-primary" />
+                เลือกเดือน:
+              </label>
+              <select
+                className="select select-bordered select-sm w-44 bg-white"
+                value={month}
+                onChange={(e) => setMonth(e.target.value)}
+              >
+                <option value="">ทั้งหมด (ทั้งปีงบ)</option>
+                {fiscalYearMonths.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.fullLabel}
                   </option>
                 ))}
               </select>
