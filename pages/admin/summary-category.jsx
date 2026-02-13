@@ -10,29 +10,86 @@ import {
 import { Bar } from 'react-chartjs-2';
 import { FaTrophy, FaListUl, FaChartBar, FaCalendarAlt, FaArrowUp, FaArrowDown, FaMap, FaDownload, FaSmileBeam } from 'react-icons/fa';
 import MapView from '@/components/MapView';
+import CardModalDetail from '@/components/CardModalDetail';
 import Link from 'next/link';
 import { getThaiFiscalYear } from '@/lib/fiscalYear';
+import { useMenuStore } from '@/stores/useMenuStore';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export default function SummaryByCategory() {
+  const { menu, fetchMenu } = useMenuStore();
   const [summary, setSummary] = useState([]);
   const [rawData, setRawData] = useState([]);
   const [satisfaction, setSatisfaction] = useState(null);
   const currentFiscalYearThai = getThaiFiscalYear(new Date());
   const fiscalYearOptions = Array.from({ length: 5 }, (_, i) => String(currentFiscalYearThai - i)); // last 5 FYs
   const [year, setYear] = useState(String(currentFiscalYearThai)); // year = Thai fiscal year (พ.ศ.)
+  const [month, setMonth] = useState(''); // YYYY-MM (Gregorian) or '' for all months
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('chart'); // 'chart' or 'map'
+  const [modalData, setModalData] = useState(null);
+  const [recentPage, setRecentPage] = useState(1);
+  const RECENT_PAGE_SIZE = 9;
+
+  const thaiMonths = [
+    { value: 1, label: "มกราคม", short: "ม.ค." },
+    { value: 2, label: "กุมภาพันธ์", short: "ก.พ." },
+    { value: 3, label: "มีนาคม", short: "มี.ค." },
+    { value: 4, label: "เมษายน", short: "เม.ย." },
+    { value: 5, label: "พฤษภาคม", short: "พ.ค." },
+    { value: 6, label: "มิถุนายน", short: "มิ.ย." },
+    { value: 7, label: "กรกฎาคม", short: "ก.ค." },
+    { value: 8, label: "สิงหาคม", short: "ส.ค." },
+    { value: 9, label: "กันยายน", short: "ก.ย." },
+    { value: 10, label: "ตุลาคม", short: "ต.ค." },
+    { value: 11, label: "พฤศจิกายน", short: "พ.ย." },
+    { value: 12, label: "ธันวาคม", short: "ธ.ค." }
+  ];
+
+  const fiscalYearMonths = (() => {
+    const fyThai = Number(year);
+    if (!Number.isFinite(fyThai)) return [];
+    const fiscalGregorianYear = fyThai - 543;
+    const start = new Date(fiscalGregorianYear - 1, 9, 1, 0, 0, 0, 0); // Oct 1
+    return Array.from({ length: 12 }, (_, i) => {
+      const d = new Date(start.getFullYear(), start.getMonth() + i, 1, 0, 0, 0, 0);
+      const gregYear = d.getFullYear();
+      const monthNum = d.getMonth() + 1;
+      const buddhistYear = gregYear + 543;
+      const value = `${gregYear}-${String(monthNum).padStart(2, '0')}`;
+      const th = thaiMonths[monthNum - 1];
+      return {
+        value,
+        monthNum,
+        gregYear,
+        buddhistYear,
+        label: `${th.short} ${buddhistYear}`,
+        fullLabel: `${th.label} ${buddhistYear}`,
+      };
+    });
+  })();
+
+  const selectedMonthLabel = month ? (fiscalYearMonths.find((m) => m.value === month)?.label || month) : null;
+
+  useEffect(() => {
+    fetchMenu();
+  }, [fetchMenu]);
+
+  useEffect(() => {
+    setRecentPage(1);
+    setModalData(null);
+  }, [year, month]);
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
       try {
+        const monthParam = month ? `&month=${encodeURIComponent(month)}` : '';
         const [complaintsRes, statsRes] = await Promise.all([
-          fetch(`/api/complaints/fiscal-year?fiscalYear=${encodeURIComponent(year)}&role=admin`),
-          fetch(`/api/submittedreports/stats?fiscalYear=${encodeURIComponent(year)}`)
+          fetch(`/api/complaints/fiscal-year?fiscalYear=${encodeURIComponent(year)}&role=admin${monthParam}`),
+          fetch(`/api/submittedreports/stats?fiscalYear=${encodeURIComponent(year)}${monthParam}`)
         ]);
 
         const complaintsJson = await complaintsRes.json();
@@ -65,11 +122,37 @@ export default function SummaryByCategory() {
     }
 
     fetchData();
-  }, [year]);
+  }, [year, month]);
 
   const total = summary.reduce((sum, item) => sum + item.count, 0);
   const topCategory = [...summary].sort((a, b) => b.count - a.count)[0]?.category || "-";
   const categoryCount = summary.length;
+
+  const recentComplaintsSorted = useMemo(() => {
+    const rows = Array.isArray(rawData) ? [...rawData] : [];
+    rows.sort((a, b) => {
+      const aDate = new Date(a?.createdAt || a?.updatedAt || 0);
+      const bDate = new Date(b?.createdAt || b?.updatedAt || 0);
+      return bDate - aDate;
+    });
+    return rows;
+  }, [rawData]);
+
+  const recentTotalPages = useMemo(() => {
+    if (recentComplaintsSorted.length === 0) return 1;
+    return Math.max(1, Math.ceil(recentComplaintsSorted.length / RECENT_PAGE_SIZE));
+  }, [recentComplaintsSorted.length]);
+
+  const recentComplaintsPage = useMemo(() => {
+    const startIdx = (recentPage - 1) * RECENT_PAGE_SIZE;
+    return recentComplaintsSorted.slice(startIdx, startIdx + RECENT_PAGE_SIZE);
+  }, [recentComplaintsSorted, recentPage]);
+
+  const getStatusBadgeClass = (status) => {
+    if (status === 'ดำเนินการเสร็จสิ้น') return 'badge badge-success';
+    if (status === 'อยู่ระหว่างดำเนินการ') return 'badge badge-info';
+    return 'badge badge-ghost';
+  };
 
   // สร้างสีสันสำหรับกราฟ
   const generateColors = (count) => {
@@ -128,7 +211,8 @@ export default function SummaryByCategory() {
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `complaints_summary_fiscal_${year}_${new Date().toISOString().split('T')[0]}.csv`);
+    const monthSuffix = month ? `_month_${month}` : '';
+    link.setAttribute('download', `complaints_summary_fiscal_${year}${monthSuffix}_${new Date().toISOString().split('T')[0]}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
@@ -184,6 +268,25 @@ export default function SummaryByCategory() {
                   ))}
                 </select>
               </div>
+
+              <div className="flex items-center gap-3">
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <FaCalendarAlt className="text-primary" />
+                  เลือกเดือน:
+                </label>
+                <select
+                  className="select select-bordered select-sm w-44 bg-white"
+                  value={month}
+                  onChange={(e) => setMonth(e.target.value)}
+                >
+                  <option value="">ทั้งหมด (ทั้งปีงบ)</option>
+                  {fiscalYearMonths.map((m) => (
+                    <option key={m.value} value={m.value}>
+                      {m.fullLabel}
+                    </option>
+                  ))}
+                </select>
+              </div>
               
               {/* Export Button */}
               <button
@@ -208,7 +311,7 @@ export default function SummaryByCategory() {
                   <p className="text-3xl font-bold">{total.toLocaleString()}</p>
                   <div className="flex items-center gap-1 mt-2 text-sm opacity-90">
                     <FaArrowUp className="text-green-300" />
-                    <span>ปีงบประมาณ {year}</span>
+                    <span>{selectedMonthLabel ? selectedMonthLabel : `ปีงบประมาณ ${year}`}</span>
                   </div>
                 </div>
                 <div className="text-4xl opacity-80">
@@ -262,7 +365,7 @@ export default function SummaryByCategory() {
                   <p className="text-3xl font-bold">{satisfaction !== null ? `${satisfaction}%` : '-'}</p>
                   <div className="flex items-center gap-1 mt-2 text-sm opacity-90">
                     <FaArrowUp className="text-emerald-200" />
-                    <span>ปีงบประมาณ {year}</span>
+                    <span>{selectedMonthLabel ? selectedMonthLabel : `ปีงบประมาณ ${year}`}</span>
                   </div>
                 </div>
                 <div className="text-4xl opacity-80">
@@ -291,7 +394,7 @@ export default function SummaryByCategory() {
               แผนที่
             </button>
             <Link
-              href="/admin/map-view"
+              href={`/admin/map-view?fiscalYear=${encodeURIComponent(year)}${month ? `&month=${encodeURIComponent(month)}` : ''}`}
               className="tab tab-outline"
             >
               <FaMap className="mr-2" />
@@ -435,6 +538,134 @@ export default function SummaryByCategory() {
           </div>
         )}
 
+        {/* Recent Complaints */}
+        <div className="mt-8">
+          <div className="card bg-white shadow-xl">
+            <div className="card-body">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
+                <div>
+                  <h3 className="card-title text-gray-800">🕒 รายการปัญหาล่าสุด</h3>
+                  <p className="text-sm text-gray-600">
+                    {selectedMonthLabel ? `ช่วง: ${selectedMonthLabel}` : `ปีงบประมาณ ${year}`} • พบ {recentComplaintsSorted.length.toLocaleString()} รายการ
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Link href="/admin/manage-complaints" className="btn btn-outline btn-sm">
+                    ไปหน้าจัดการเรื่องร้องเรียน
+                  </Link>
+                </div>
+              </div>
+
+              {recentComplaintsSorted.length === 0 ? (
+                <div className="text-center py-10 text-gray-500">
+                  ไม่พบข้อมูลในช่วงที่เลือก
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {recentComplaintsPage.map((item) => {
+                      const createdAt = new Date(item?.createdAt || item?.updatedAt || Date.now());
+                      const imageUrl = Array.isArray(item?.images) ? item.images[0] : null;
+                      const categoryIcon = menu?.find((m) => m.Prob_name === item?.category)?.Prob_pic;
+                      const canOpenModal = Boolean(item?.complaintId && item?.category);
+                      const titleText = (item?.title || item?.problems?.[0] || item?.detail || 'ไม่มีรายละเอียด').toString();
+                      const detailText = (item?.detail || '').toString();
+
+                      return (
+                        <div
+                          key={item?._id || item?.complaintId || `${createdAt.getTime()}`}
+                          className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-all bg-white"
+                        >
+                          <div className="h-40 bg-gray-100 relative overflow-hidden">
+                            {imageUrl ? (
+                              <img src={imageUrl} alt="ภาพปัญหา" className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
+                                ไม่มีภาพ
+                              </div>
+                            )}
+                            <div className="absolute top-2 left-2 flex items-center gap-2">
+                              {categoryIcon && (
+                                <img src={categoryIcon} alt={item?.category || ''} className="w-8 h-8 bg-white/80 rounded-lg p-1 object-contain" />
+                              )}
+                              <span className={getStatusBadgeClass(item?.status)}>
+                                {item?.status || 'ไม่ระบุสถานะ'}
+                              </span>
+                            </div>
+                            <div className="absolute top-2 right-2">
+                              <span className="px-2 py-1 text-xs rounded-full bg-white/80 backdrop-blur-md shadow-sm text-gray-700">
+                                {createdAt.toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' })}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="p-4">
+                            <div className="flex items-start justify-between gap-3 mb-2">
+                              <div className="min-w-0">
+                                <div className="font-semibold text-gray-900 truncate">
+                                  {item?.category || 'ไม่ระบุหมวดหมู่'}
+                                </div>
+                                {item?.community && (
+                                  <div className="text-xs text-gray-500 truncate">
+                                    ชุมชน: {item.community}
+                                  </div>
+                                )}
+                              </div>
+                              {item?.complaintId && (
+                                <div className="text-xs text-gray-500 whitespace-nowrap">
+                                  #{item.complaintId}
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="text-sm text-gray-700 line-clamp-2 mb-3">
+                              {detailText ? detailText : titleText}
+                            </div>
+
+                            <button
+                              className="btn btn-sm btn-outline w-full"
+                              disabled={!canOpenModal}
+                              title={!canOpenModal ? 'ข้อมูลไม่ครบ (ต้องมี complaintId และ category)' : 'ดูรายละเอียด'}
+                              onClick={() => {
+                                if (!canOpenModal) return;
+                                setModalData({ ...item, blurImage: false });
+                              }}
+                            >
+                              ดูรายละเอียด
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {recentComplaintsSorted.length > RECENT_PAGE_SIZE && (
+                    <div className="flex items-center justify-center gap-2 mt-6">
+                      <button
+                        className="btn btn-sm btn-outline"
+                        disabled={recentPage <= 1}
+                        onClick={() => setRecentPage((p) => Math.max(1, p - 1))}
+                      >
+                        ก่อนหน้า
+                      </button>
+                      <span className="text-sm text-gray-600">
+                        หน้า {recentPage} / {recentTotalPages}
+                      </span>
+                      <button
+                        className="btn btn-sm btn-outline"
+                        disabled={recentPage >= recentTotalPages}
+                        onClick={() => setRecentPage((p) => Math.min(recentTotalPages, p + 1))}
+                      >
+                        ถัดไป
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Summary Footer */}
         <div className="mt-8">
           <div className="card bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200">
@@ -446,6 +677,13 @@ export default function SummaryByCategory() {
           </div>
         </div>
       </div>
+
+      {modalData && (
+        <CardModalDetail
+          modalData={modalData}
+          onClose={() => setModalData(null)}
+        />
+      )}
     </div>
   );
 }
