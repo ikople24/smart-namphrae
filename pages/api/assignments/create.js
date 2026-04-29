@@ -1,6 +1,7 @@
 import dbConnect from '@/lib/dbConnect';
 import Assignment from '@/models/Assignment';
 import mongoose from 'mongoose';
+import { parseCompletedAtForStorage } from '@/utils/assignmentCompletedAt';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -20,7 +21,7 @@ export default async function handler(req, res) {
       userId: new mongoose.Types.ObjectId(userId),
       solutionDetails,
       solutionImages,
-      completedAt,
+      completedAt: parseCompletedAtForStorage(completedAt),
       remarks,
     });
 

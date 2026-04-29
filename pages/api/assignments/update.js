@@ -1,7 +1,8 @@
 // /pages/api/assignments/update.js
 
-import dbConnect from "@/lib/dbConnect"; // ถ้าใช้ MongoDB
-import Assignment from "@/models/Assignment"; // ตรวจสอบ path ให้ตรงกับโครงสร้างของคุณ
+import dbConnect from "@/lib/dbConnect";
+import Assignment from "@/models/Assignment";
+import { parseCompletedAtForStorage } from "@/utils/assignmentCompletedAt";
 
 export default async function handler(req, res) {
   if (req.method !== "PUT") {
@@ -22,7 +23,7 @@ export default async function handler(req, res) {
           ? solution.map((item) => String(item))
           : [String(solution)],
         solutionImages,
-        completedAt,
+        completedAt: parseCompletedAtForStorage(completedAt),
       },
       { new: true }
     );

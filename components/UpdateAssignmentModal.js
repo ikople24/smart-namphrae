@@ -2,15 +2,14 @@ import Image from "next/image";
 import ImageUploads from "./ImageUploads";
 import { useState, useEffect } from "react";
 import { useAdminOptionsStore } from "../stores/useAdminOptionsStore";
+import { completedAtToDateInputValue } from "@/utils/assignmentCompletedAt";
 
 export default function UpdateAssignmentModal({ assignment, onClose }) {
   const [note, setNote] = useState(assignment.note || "");
   const [solution, setSolution] = useState(assignment.solution || []);
   const [solutionImages, setSolutionImages] = useState([]);
   const [completedAt, setCompletedAt] = useState(
-    assignment.completedAt
-      ? new Date(assignment.completedAt).toISOString().split("T")[0]
-      : ""
+    completedAtToDateInputValue(assignment.completedAt)
   );
   const { adminOptions } = useAdminOptionsStore();
   
@@ -22,11 +21,7 @@ export default function UpdateAssignmentModal({ assignment, onClose }) {
     setNote(assignment.note || "");
     setSolution(Array.isArray(assignment.solution) ? assignment.solution : []);
     setSolutionImages(assignment.solutionImages || []);
-    setCompletedAt(
-      assignment.completedAt
-        ? new Date(assignment.completedAt).toISOString().split("T")[0]
-        : ""
-    );
+    setCompletedAt(completedAtToDateInputValue(assignment.completedAt));
   }, [assignment]);
 
   useEffect(() => {

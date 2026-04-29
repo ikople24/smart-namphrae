@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Image from "next/image";
+import { uploadToCloudinary } from "@/utils/uploadToCloudinary";
 import dynamic from "next/dynamic";
 const LocationPickerModal = dynamic(() => import("./LocationPickerModal"), { ssr: false });
 const ImageModal = dynamic(() => import("./ImageModal"), { ssr: false });
@@ -108,13 +109,11 @@ export default function EditUserModal({ isOpen, onClose, complaint }) {
     const file = event.target.files[0];
     if (!file) return;
 
-    // ตรวจสอบประเภทไฟล์
     if (!file.type.startsWith('image/')) {
       alert('กรุณาเลือกไฟล์ภาพเท่านั้น');
       return;
     }
 
-    // ตรวจสอบขนาดไฟล์ (ไม่เกิน 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert('ขนาดไฟล์ต้องไม่เกิน 5MB');
       return;
@@ -122,48 +121,33 @@ export default function EditUserModal({ isOpen, onClose, complaint }) {
 
     try {
       setUploadingImage(true);
-      
-      // แปลงไฟล์เป็น base64
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const imageData = e.target.result;
-        
-        try {
-          // อัปโหลดภาพ
-          const response = await axios.post('/api/upload-complaint-image', {
-            reportId: complaint._id,
-            imageData: imageData
-          });
+      const secureUrl = await uploadToCloudinary(file);
+      const response = await axios.post('/api/upload-complaint-image', {
+        reportId: complaint._id,
+        imageUrl: secureUrl,
+      });
 
-          if (response.data.success) {
-            // อัปเดตข้อมูลใน state
-            setReporterInfo(prev => ({
-              ...prev,
-              images: response.data.data.images
-            }));
-            alert('อัปโหลดภาพสำเร็จ');
-          } else {
-            alert('เกิดข้อผิดพลาดในการอัปโหลดภาพ: ' + response.data.message);
-          }
-        } catch (uploadError) {
-          console.error('Error uploading image:', uploadError);
-          let errorMessage = 'เกิดข้อผิดพลาดในการอัปโหลดภาพ';
-          
-          if (uploadError.response?.data?.message) {
-            errorMessage += ': ' + uploadError.response.data.message;
-          } else if (uploadError.message) {
-            errorMessage += ': ' + uploadError.message;
-          }
-          
-          alert(errorMessage);
-        }
-      };
-      reader.readAsDataURL(file);
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      alert('เกิดข้อผิดพลาดในการอัปโหลดภาพ');
+      if (response.data.success) {
+        setReporterInfo((prev) => ({
+          ...prev,
+          images: response.data.data.images,
+        }));
+        alert('อัปโหลดภาพสำเร็จ');
+      } else {
+        alert('เกิดข้อผิดพลาดในการอัปโหลดภาพ: ' + response.data.message);
+      }
+    } catch (uploadError) {
+      console.error('Error uploading image:', uploadError);
+      let errorMessage = 'เกิดข้อผิดพลาดในการอัปโหลดภาพ';
+      if (uploadError.response?.data?.message) {
+        errorMessage += ': ' + uploadError.response.data.message;
+      } else if (uploadError.message) {
+        errorMessage += ': ' + uploadError.message;
+      }
+      alert(errorMessage);
     } finally {
       setUploadingImage(false);
+      event.target.value = '';
     }
   };
 
