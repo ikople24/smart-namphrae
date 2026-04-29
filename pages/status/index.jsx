@@ -1,5 +1,6 @@
 import CardModalDetail from "@/components/CardModalDetail";
 import { useEffect, useState, useMemo, useCallback } from "react";
+import { Search } from "lucide-react";
 import CompletedCard from "@/components/CardCompleted";
 import { useUser } from "@clerk/nextjs";
 import { useMenuStore } from "@/stores/useMenuStore";
@@ -24,6 +25,7 @@ const StatusPage = () => {
   const [fiscalComplaints, setFiscalComplaints] = useState([]);
   const [assignmentsMap, setAssignmentsMap] = useState({});
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // ⚡ โหลด menu และ problemOptions ที่ parent ครั้งเดียว (ไม่ใช่ทุก card)
   useEffect(() => {
@@ -59,14 +61,39 @@ const StatusPage = () => {
     const source = fiscalComplaints;
     if (!Array.isArray(source)) return [];
 
+    const q = searchTerm.trim().toLowerCase();
+    const filtered = !q
+      ? source
+      : source.filter((item) => {
+          const detail = item.detail?.toLowerCase() || "";
+          const category = item.category?.toLowerCase() || "";
+          const complaintId = item.complaintId?.toLowerCase() || "";
+          const community = item.community?.toLowerCase() || "";
+          const fullName = item.fullName?.toLowerCase() || "";
+          return (
+            detail.includes(q) ||
+            category.includes(q) ||
+            complaintId.includes(q) ||
+            community.includes(q) ||
+            fullName.includes(q)
+          );
+        });
+
     // backend already filters by fiscal year and sorts desc; keep a defensive sort here.
-    return [...source].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  }, [fiscalComplaints]);
+    return [...filtered].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+  }, [fiscalComplaints, searchTerm]);
 
   // ⚡ Paginated data
   const paginatedComplaints = useMemo(() => {
     return dataSource.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   }, [dataSource, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    // reset page when searching (so user sees first results)
+    setCurrentPage(1);
+  }, [searchTerm, activeYear]);
 
   // ⚡ Batch fetch assignments สำหรับ paginated items เท่านั้น (ลดจาก N calls เหลือ 1 call)
   useEffect(() => {
@@ -112,6 +139,28 @@ const StatusPage = () => {
             {language === "en" ? `Fiscal Year ${Number(y) - 543}` : `ปีงบประมาณ ${y}`}
           </button>
         ))}
+      </div>
+
+      <div className="w-full max-w-3xl mx-auto px-4 mb-4">
+        <label className="label px-1 py-0">
+          <span className="label-text font-medium text-gray-700">
+            ค้นหา
+          </span>
+        </label>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="search"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder={
+              language === "en"
+                ? "Search by complaint id, category, community, details..."
+                : "ค้นหาจากเลขที่คำร้อง, หมวดหมู่, ชุมชน, รายละเอียด..."
+            }
+            className="input input-bordered input-sm w-full pl-10 bg-white"
+          />
+        </div>
       </div>
 
       {loading ? (
