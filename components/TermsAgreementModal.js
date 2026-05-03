@@ -1,9 +1,50 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { CheckCircle, Shield, AlertTriangle, Database, FileCheck } from 'lucide-react';
+import LanguageSwitcher from './LanguageSwitcher';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const TermsAgreementModal = ({ isOpen, onAccept }) => {
   const [isAccepted, setIsAccepted] = useState(false);
+  const { t } = useTranslation();
+
+  const sections = [
+    {
+      key: 'dataConsent',
+      Icon: CheckCircle,
+      wrapperClassName: 'bg-blue-50',
+      iconClassName: 'text-blue-600',
+      titleClassName: 'text-blue-800',
+    },
+    {
+      key: 'privacy',
+      Icon: Shield,
+      wrapperClassName: 'bg-green-50',
+      iconClassName: 'text-green-600',
+      titleClassName: 'text-blue-800',
+    },
+    {
+      key: 'correctUse',
+      Icon: AlertTriangle,
+      wrapperClassName: 'bg-yellow-50',
+      iconClassName: 'text-yellow-600',
+      titleClassName: 'text-blue-800',
+    },
+    {
+      key: 'dataStorage',
+      Icon: Database,
+      wrapperClassName: 'bg-purple-50',
+      iconClassName: 'text-purple-600',
+      titleClassName: 'text-blue-800',
+    },
+    {
+      key: 'agreement',
+      Icon: FileCheck,
+      wrapperClassName: 'bg-indigo-50',
+      iconClassName: 'text-indigo-600',
+      titleClassName: 'text-blue-800',
+    },
+  ];
 
   const handleAccept = () => {
     if (isAccepted) {
@@ -20,80 +61,41 @@ const TermsAgreementModal = ({ isOpen, onAccept }) => {
     <div className="fixed inset-0 bg-transparent flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-200">
         <div className="p-6">
+          <div className="flex justify-end mb-2">
+            <LanguageSwitcher />
+          </div>
           <div className="text-center mb-6">
             <div className="flex justify-center mb-4">
               <Image
                 src="/LogoNP.png"
-                alt="เทศบาลตำบลน้ำแพร่พัฒนา"
+                alt={t.terms.logoAlt}
                 width={80}
                 height={80}
                 className="rounded-full shadow-lg"
               />
             </div>
             <h2 className="text-xl font-bold text-gray-800 mb-2">
-              ข้อตกลงและเงื่อนไขการใช้งาน
+              {t.terms.title}
             </h2>
             <p className="text-sm text-gray-600">
-              SMART-NAMPHARE <b>เทศบาลตำบลน้ำแพร่พัฒนา</b>
+              SMART-NAMPHARE <b>{t.terms.subtitle}</b>
             </p>
           </div>
 
           <div className="space-y-4 mb-6">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="flex items-center mb-2">
-                <CheckCircle className="w-5 h-5 text-blue-600 mr-2" />
-                <h3 className="font-semibold text-blue-800">1. การยินยอมข้อมูล</h3>
+            {sections.map(({ key, Icon, wrapperClassName, iconClassName, titleClassName }) => (
+              <div key={key} className={`${wrapperClassName} p-4 rounded-lg`}>
+                <div className="flex items-center mb-2">
+                  <Icon className={`w-5 h-5 ${iconClassName} mr-2`} />
+                  <h3 className={`font-semibold ${titleClassName}`}>
+                    {t.terms.sections[key].title}
+                  </h3>
+                </div>
+                <p className="text-sm text-gray-700">
+                  {t.terms.sections[key].description}
+                </p>
               </div>
-              <p className="text-sm text-gray-700">
-                ท่านยินยอมให้ข้อมูลที่เป็นจริงทุกประการ
-              </p>
-            </div>
-
-            <div className="bg-green-50 p-4 rounded-lg">
-              <div className="flex items-center mb-2">
-                <Shield className="w-5 h-5 text-green-600 mr-2" />
-                <h3 className="font-semibold text-blue-800">2. การรักษาความเป็นส่วนตัว</h3>
-              </div>
-              <p className="text-sm text-gray-700">
-                ข้อมูลชื่อเบอร์โทรศัพท์ของท่านมีไว้สำหรับติดต่อในคำร้องเท่านั้น 
-                เทศบาลจะไม่เปิดเผยข้อมูลให้แก่บุคคลอื่นทุกกรณี
-              </p>
-            </div>
-
-            <div className="bg-yellow-50 p-4 rounded-lg">
-              <div className="flex items-center mb-2">
-                <AlertTriangle className="w-5 h-5 text-yellow-600 mr-2" />
-                <h3 className="font-semibold text-blue-800">3. การใช้ข้อมูลอย่างถูกต้อง</h3>
-              </div>
-              <p className="text-sm text-gray-700">
-                หากท่านแสดงข้อมูลอันเป็นเท็จหรือก่อให้เกิดความเสียหายไม่ว่าทางตรงหรือทางอ้อม 
-                อันเป็นการดูหมิ่นเสียดสี หรือทำให้บุคคลอื่นเกิดความเสียหาย 
-                เทศบาลจะระงับสิทธิ์การเข้าถึงข้อมูลของท่านโดยมิต้องแจ้งให้ทราบล่วงหน้า
-              </p>
-            </div>
-
-            <div className="bg-purple-50 p-4 rounded-lg">
-              <div className="flex items-center mb-2">
-                <Database className="w-5 h-5 text-purple-600 mr-2" />
-                <h3 className="font-semibold text-blue-800">4. การจัดเก็บข้อมูล</h3>
-              </div>
-              <p className="text-sm text-gray-700">
-                ข้อมูลของท่านจะถูกจัดเก็บไว้ในระบบคลาว์คอมพิวเตอร์โดยจะเข้ารหัสไว้อย่างปลอดภัย 
-                และมีกำหนดอายุ 2 ปี ทางเทศบาลจะทำลายข้อมูลส่วนบุคคลของท่าน 
-                หากต้องการดำเนินการติดต่อเจ้าหน้าที่เพื่อดำเนินการเพิกถอนข้อมูลของท่านภายใน 30 วัน
-              </p>
-            </div>
-
-            <div className="bg-indigo-50 p-4 rounded-lg">
-              <div className="flex items-center mb-2">
-                <FileCheck className="w-5 h-5 text-indigo-600 mr-2" />
-                <h3 className="font-semibold text-blue-800">5. การยอมรับข้อตกลง</h3>
-              </div>
-              <p className="text-sm text-gray-700">
-                หากท่านได้อ่านเงื่อนไขดังกล่าวทั้งหมดแล้ว ให้กดปุ่ม [ยอมรับข้อตกลง] 
-                เพื่อเริ่มดำเนินการใช้งาน SMART-NAMPHARE ได้ทันที
-              </p>
-            </div>
+            ))}
           </div>
 
           <div className="flex items-center mb-6">
@@ -105,7 +107,7 @@ const TermsAgreementModal = ({ isOpen, onAccept }) => {
               className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
             />
             <label htmlFor="termsCheckbox" className="ml-2 text-sm text-gray-700">
-              ฉันได้อ่านและยอมรับข้อตกลงและเงื่อนไขการใช้งานทั้งหมด
+              {t.terms.checkbox}
             </label>
           </div>
 
@@ -119,12 +121,12 @@ const TermsAgreementModal = ({ isOpen, onAccept }) => {
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
             >
-              ยอมรับข้อตกลง
+              {t.terms.acceptButton}
             </button>
           </div>
 
           <p className="text-xs text-gray-500 text-center mt-4">
-            การยอมรับข้อตกลงนี้จะถูกบันทึกในอุปกรณ์ของคุณเพียงครั้งเดียวเท่านั้น
+            {t.terms.note}
           </p>
         </div>
       </div>

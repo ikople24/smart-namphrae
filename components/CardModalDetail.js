@@ -9,6 +9,7 @@ import CardOfficail from "./CardOfficail";
 import SatisfactionChart from "./SatisfactionChart";
 import { useUser } from "@clerk/nextjs";
 import { useTranslation } from "@/hooks/useTranslation";
+import { getProblemDisplayLabel } from "@/utils/problemDisplayLabel";
 
 export default function CardModalDetail({ modalData, onClose }) {
   const { menu } = useMenuStore();
@@ -154,7 +155,12 @@ export default function CardModalDetail({ modalData, onClose }) {
                   modalData.problems.map((p, idx) => {
                     const cleanLabel = typeof p === "string" ? p.trim() : "";
                     const matched = problemOptions.find((opt) => opt.label === cleanLabel);
-                    const displayLabel = language === 'en' && matched?.labelEn ? matched.labelEn : cleanLabel;
+                    const displayLabel = getProblemDisplayLabel(
+                      language,
+                      cleanLabel,
+                      matched?.labelEn,
+                      t.problemMap
+                    );
                     return (
                       <div
                         key={idx}

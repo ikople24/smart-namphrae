@@ -9,6 +9,7 @@ import Swal from 'sweetalert2';
 import { z } from 'zod';
 import Image from 'next/image';
 import { useTranslation } from '@/hooks/useTranslation';
+import { getProblemDisplayLabel } from '@/utils/problemDisplayLabel';
 const LocationConfirm = dynamic(() => import('./LocationConfirm'), { ssr: false });
 
 // ปัญหาที่มีการจำกัดจำนวนต่อวัน
@@ -297,7 +298,12 @@ const ComplaintFormModal = ({ selectedLabel, onClose }) => {
               {problemOptions
                 .filter(option => option.category === selectedLabel)
                 .map(option => {
-                  const displayLabel = language === 'en' && option.labelEn ? option.labelEn : option.label;
+                  const displayLabel = getProblemDisplayLabel(
+                    language,
+                    option.label,
+                    option.labelEn,
+                    t.problemMap
+                  );
                   const limitStatus = dailyLimitStatus[option.label];
                   const isLimitReached = limitStatus?.isLimitReached;
                   const remaining = limitStatus?.remaining;

@@ -13,6 +13,7 @@ import { ChevronDown } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { getOptimizedCloudinaryUrl } from "@/utils/uploadToCloudinary";
 import { useTranslation } from "@/hooks/useTranslation";
+import { getProblemDisplayLabel } from "@/utils/problemDisplayLabel";
 
 export default function ComplaintListPage() {
   const { user } = useUser();
@@ -81,10 +82,16 @@ export default function ComplaintListPage() {
                       </div>
                       <div className="absolute bottom-2 right-2 left-2 z-10 flex flex-wrap gap-2">
                         {item.problems?.map((prob, i) => {
+                          const clean = typeof prob === "string" ? prob.trim() : "";
                           const found = problemOptions.find(
-                            (opt) => opt.label === prob
+                            (opt) => opt.label === prob || opt.label === clean
                           );
-                          const displayLabel = language === 'en' && found?.labelEn ? found.labelEn : prob;
+                          const displayLabel = getProblemDisplayLabel(
+                            language,
+                            clean || prob,
+                            found?.labelEn,
+                            t.problemMap
+                          );
                           return (
                             <div
                               key={i}

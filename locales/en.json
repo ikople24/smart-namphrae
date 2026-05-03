@@ -59,7 +59,8 @@
     "other": "Other",
     "noise": "Noise Pollution",
     "animal": "Stray Animals",
-    "publicHealth": "Public Health"
+    "publicHealth": "Public Health",
+    "wildfire": "Wildfire Report"
   },
   "categoryMap": {
     "ไฟส่องสว่าง": "Street Lighting",
@@ -70,7 +71,25 @@
     "อื่นๆ": "Other",
     "เสียงไร้สาย": "Noise Pollution",
     "สัตว์เลี้ยง": "Stray Animals",
-    "งานสาธารณสุข": "Public Health"
+    "งานสาธารณสุข": "Public Health",
+    "แจ้งไฟป่า": "Wildfire Report",
+    "แจ้งไฟป่าป่า": "Wildfire Report"
+  },
+  "problemMap": {
+    "แจ้งไฟป่า": "Wildfire report",
+    "แจ้งไฟป่าป่า": "Wildfire report",
+    "แจ้งเหตุไฟป่า": "Wildfire incident report",
+    "พบไฟป่า": "Wildfire sighting",
+    "ควันจากไฟป่า": "Wildfire smoke",
+    "ไฟไหม้พื้นที่ป่า": "Fire in forest area",
+    "พบควันหนาในป่า": "Dense smoke in forest area",
+    "ผิวจราจรเป็นหลุม": "Potholed road surface",
+    "กิ่งไม้ล้ำถนน": "Overhanging branches",
+    "ขอความอนุเคราะห์": "Request for assistance",
+    "ความสะอาด": "Sanitation",
+    "ฝาท่อชำรุด/สูญหาย": "Damaged or missing manhole cover",
+    "รางระบายน้ำอุดตัน": "Clogged drainage channel",
+    "กิ่งไม้หักโค่นขวางถนน": "Fallen tree blocking road"
   },
   "communityMap": {
     "บ้านบ่อ": "Ban Bo",
@@ -187,12 +206,70 @@
     "veryPoor": "Very Dissatisfied",
     "comment": "Additional Comments",
     "submit": "Submit Survey",
-    "thankYou": "Thank you for your feedback"
+    "thankYou": "Thank you for your feedback",
+    "rating": "Rating",
+    "commentPlaceholder": "Add more comments...",
+    "submitComment": "Submit Feedback",
+    "validationTitle": "Please provide a rating",
+    "validationMessage": "Please select a rating before submitting the survey",
+    "confirmTitle": "Confirm survey submission?",
+    "confirmMessage": "Do you want to submit this feedback?",
+    "confirmButton": "Yes, submit",
+    "cancelButton": "Cancel",
+    "successTitle": "Submitted successfully",
+    "successMessage": "Thank you for your feedback",
+    "errorTitle": "Error",
+    "errorMessage": "Unable to submit feedback"
+  },
+  "official": {
+    "title": "Officer in Charge",
+    "unknownOfficer": "Unknown officer",
+    "assignedDate": "Received Date",
+    "completedDate": "Completed Date",
+    "report": "Report",
+    "rateSatisfaction": "Rate Satisfaction"
+  },
+  "assignment": {
+    "title": "Operation",
+    "solutionAll": "Action Taken (All)",
+    "noSolution": "No action data",
+    "officerNote": "Officer Note",
+    "noOfficerNote": "No officer note"
   },
   "language": {
     "th": "Thai",
     "en": "English",
     "switchTo": "Switch Language"
+  },
+  "terms": {
+    "title": "Terms and Conditions of Use",
+    "subtitle": "Nam Phrae Phatthana Subdistrict Municipality",
+    "logoAlt": "Nam Phrae Phatthana Subdistrict Municipality",
+    "sections": {
+      "dataConsent": {
+        "title": "1. Data Consent",
+        "description": "You agree to provide truthful information in all respects."
+      },
+      "privacy": {
+        "title": "2. Privacy Protection",
+        "description": "Your name and phone number are used only for contacting you about your request. The municipality will not disclose this information to any third party under any circumstances."
+      },
+      "correctUse": {
+        "title": "3. Proper Use of Information",
+        "description": "If you provide false information or cause damage, directly or indirectly, including defamatory or harmful content that affects others, the municipality reserves the right to suspend your access without prior notice."
+      },
+      "dataStorage": {
+        "title": "4. Data Storage",
+        "description": "Your information will be stored securely in a cloud computing system with encryption for a period of 2 years. The municipality will destroy your personal data. If you wish to withdraw your data, please contact the responsible officer within 30 days."
+      },
+      "agreement": {
+        "title": "5. Agreement Acceptance",
+        "description": "After reading all terms and conditions, press [Accept Agreement] to start using SMART-NAMPHRAE immediately."
+      }
+    },
+    "checkbox": "I have read and accept all terms and conditions of use.",
+    "acceptButton": "Accept Agreement",
+    "note": "This acceptance will be saved on your device only once."
   },
   "errors": {
     "networkError": "Network connection error",

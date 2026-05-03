@@ -2,10 +2,12 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { AlertCircle, MessageCircleHeart } from "lucide-react";
 import SatisfactionForm from "./SatisfactionForm";
+import { useTranslation } from "@/hooks/useTranslation";
 
 
 export default function CardOfficail(props) {
   // console.log("CardOfficail received props:", props);
+    const { t, language } = useTranslation();
     const [assignments, setAssignments] = useState([]);
     const [assignedDate, setAssignedDate] = useState(null);
     const [completedDate, setCompletedDate] = useState(null);
@@ -65,9 +67,18 @@ export default function CardOfficail(props) {
     return null;
   }
 
+  const formatDateTime = (date) => {
+    if (!date) return "-";
+
+    return new Date(date).toLocaleString(language === "en" ? "en-US" : "th-TH", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    }) + (language === "th" ? " น." : "");
+  };
+
   return (
     <div className="w-full max-w-md mx-auto bg-white rounded-md shadow p-4">
-      <div className="text-md font-semibold mb-2">เจ้าหน้าที่ดูแลเรื่อง</div>
+      <div className="text-md font-semibold mb-2">{t.official.title}</div>
       <div className="grid grid-cols-[30%_70%] gap-4 items-start">
         <div className="flex flex-col items-center gap-2 border-r border-gray-200 pr-4 h-full">
           <Image
@@ -80,31 +91,31 @@ export default function CardOfficail(props) {
           <div className="textarea-xs font-semibold text-gray-500 leading-tight text-center">
             {officer
               ? `${officer.name.split(" ").slice(1).join(" ")} (${officer.department})`
-              : "ไม่ทราบชื่อเจ้าหน้าที่"}
+              : t.official.unknownOfficer}
           </div>
         </div>
         <div className="flex flex-col gap-1 text-sm text-gray-700">
           <div className="flex justify-between">
-            <div className="text-xs text-gray-900">วันที่รับแจ้ง</div>
+            <div className="text-xs text-gray-900">{t.official.assignedDate}</div>
             <div className="text-xs text-gray-900 font-semibold">
-              {assignedDate ? new Date(assignedDate).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" }) + " น." : "-"}
+              {formatDateTime(assignedDate)}
             </div>
           </div>
           <div className="flex justify-between">
-            <div className="text-xs text-gray-900">วันที่ดำเนินการสำเร็จ</div>
+            <div className="text-xs text-gray-900">{t.official.completedDate}</div>
             <div className="text-xs text-gray-900 font-semibold">
-              {completedDate ? new Date(completedDate).toLocaleString("th-TH", { dateStyle: "medium", timeStyle: "short" }) + " น." : "-"}
+              {formatDateTime(completedDate)}
             </div>
           </div>
           <div className="flex flex-wrap justify-between items-center mt-4 gap-2">
             <button className="btn btn-outline btn-error btn-sm btn-disabled text-red-400">
-              <AlertCircle className="w-4 h-4" /> รายงาน
+              <AlertCircle className="w-4 h-4" /> {t.official.report}
             </button>
             <button
               className="btn btn-info btn-sm text-white"
               onClick={() => setShowRating(!showRating)}
             >
-              <MessageCircleHeart className="w-6 h-6 text-white" /> ประเมินความพึงพอใจ
+              <MessageCircleHeart className="w-6 h-6 text-white" /> {t.official.rateSatisfaction}
             </button>
           </div>
           {showRating && (
