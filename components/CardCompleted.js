@@ -3,6 +3,7 @@ import ReactCompareImage from 'react-compare-image';
 import { useMemo, useState } from "react";
 import { getOptimizedCloudinaryUrl } from "@/utils/uploadToCloudinary";
 import { useTranslation } from "@/hooks/useTranslation";
+import { getProblemDisplayLabel } from "@/utils/problemDisplayLabel";
 
 /* eslint-disable @next/next/no-img-element */
 
@@ -29,13 +30,18 @@ const CompletedCard = ({
       const found = problemOptions?.find(
         (p) => p?.label?.trim() === problem?.trim()
       );
-      const displayLabel = language === 'en' && found?.labelEn ? found.labelEn : (found?.label ?? problem);
+      const displayLabel = getProblemDisplayLabel(
+        language,
+        found?.label ?? problem,
+        found?.labelEn,
+        t.problemMap
+      );
       return {
         label: displayLabel,
         iconUrl: found?.iconUrl ?? "",
       };
     });
-  }, [problems, problemOptions, language]);
+  }, [problems, problemOptions, language, t.problemMap]);
 
   // ⚡ ใช้ useMemo สำหรับ menu icon
   const menuIcon = useMemo(() => {

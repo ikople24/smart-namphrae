@@ -1,25 +1,27 @@
 import React, { useState } from "react";
 import Swal from "sweetalert2";
+import { useTranslation } from "@/hooks/useTranslation";
 
 const SatisfactionForm = ({ onSubmit, complaintId }) => {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
+  const { t } = useTranslation();
 
   const handleSubmit = async () => {
     console.log("📦 Submitting Satisfaction:", { complaintId, rating, comment });
 
     if (rating === 0) {
-      Swal.fire("กรุณาให้คะแนน", "โปรดเลือกคะแนนก่อนส่งแบบประเมิน", "warning");
+      Swal.fire(t.satisfaction.validationTitle, t.satisfaction.validationMessage, "warning");
       return;
     }
 
     const result = await Swal.fire({
-      title: "ยืนยันการส่งแบบประเมิน?",
-      text: "คุณต้องการส่งความคิดเห็นนี้หรือไม่?",
+      title: t.satisfaction.confirmTitle,
+      text: t.satisfaction.confirmMessage,
       icon: "question",
       showCancelButton: true,
-      confirmButtonText: "ใช่, ส่งเลย!",
-      cancelButtonText: "ยกเลิก",
+      confirmButtonText: t.satisfaction.confirmButton,
+      cancelButtonText: t.satisfaction.cancelButton,
     });
 
     if (!result.isConfirmed) return;
@@ -31,10 +33,10 @@ const SatisfactionForm = ({ onSubmit, complaintId }) => {
     });
 
     if (res.ok) {
-      Swal.fire("ส่งสำเร็จ", "ขอบคุณสำหรับความคิดเห็นของคุณ", "success");
+      Swal.fire(t.satisfaction.successTitle, t.satisfaction.successMessage, "success");
       if (onSubmit) onSubmit();
     } else {
-      Swal.fire("เกิดข้อผิดพลาด", "ไม่สามารถส่งความคิดเห็นได้", "error");
+      Swal.fire(t.satisfaction.errorTitle, t.satisfaction.errorMessage, "error");
     }
   };
 
@@ -51,15 +53,15 @@ const SatisfactionForm = ({ onSubmit, complaintId }) => {
               onChange={() => setRating(star)}
               className="mask mask-star-2 bg-yellow-400 border-yellow-500 w-6 h-6 transition-all duration-300 ease-in-out hover:scale-110"
               aria-label={`${star} star`}
-              title={`${star} ดาว`}
+              title={`${t.satisfaction.rating}: ${star}`}
             />
           ))}
         </div>
-        <p className="text-right mt-1 text-sm">ให้คะแนน: {rating}</p>
+        <p className="text-right mt-1 text-sm">{t.satisfaction.rating}: {rating}</p>
 
         <textarea
           className="textarea textarea-bordered w-full max-w-md mt-4"
-          placeholder="แสดงความคิดเห็นเพิ่มเติม..."
+          placeholder={t.satisfaction.commentPlaceholder}
           value={comment}
           onChange={(e) => setComment(e.target.value)}
         />
@@ -69,7 +71,7 @@ const SatisfactionForm = ({ onSubmit, complaintId }) => {
           onClick={handleSubmit}
           className="btn btn-primary btn-sm mt-4"
         >
-          ส่งความคิดเห็น
+          {t.satisfaction.submitComment}
         </button>
       </div>
     </form>

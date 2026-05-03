@@ -34,6 +34,13 @@ const thaiToEnglishMap = {
   "สะพานชำรุด": "Damaged bridge",
   "ราวกันตกชำรุด": "Damaged guardrail",
   "กิ่งไม้กีดขวางทางถนน": "Tree branch blocking road",
+  "ผิวจราจรเป็นหลุม": "Potholed road surface",
+  "กิ่งไม้ล้ำถนน": "Overhanging branches",
+  "ฝาท่อชำรุด/สูญหาย": "Damaged or missing manhole cover",
+  "รางระบายน้ำอุดตัน": "Clogged drainage channel",
+  "กิ่งไม้หักโค่นขวางถนน": "Fallen tree blocking road",
+  "ขอความอนุเคราะห์": "Request for assistance",
+  "ความสะอาด": "Sanitation",
   
   // ขยะมูลฝอย (Waste Management)
   "ขยะไม่ถูกเก็บ": "Garbage not collected",
@@ -74,6 +81,15 @@ const thaiToEnglishMap = {
   "ซากสัตว์": "Animal carcass",
   "สัตว์รบกวน": "Animal nuisance",
   
+  // แจ้งไฟป่า (Wildfire)
+  "แจ้งไฟป่า": "Wildfire report",
+  "แจ้งไฟป่าป่า": "Wildfire report",
+  "แจ้งเหตุไฟป่า": "Wildfire incident report",
+  "พบไฟป่า": "Wildfire sighting",
+  "ควันจากไฟป่า": "Wildfire smoke",
+  "ไฟไหม้พื้นที่ป่า": "Fire in forest area",
+  "พบควันหนาในป่า": "Dense smoke in forest area",
+
   // งานสาธารณสุข (Public Health)
   "แจ้งเหตุโรคไข้เลือดออก": "Report dengue fever",
   "พ่นหมอกควัน": "Fogging request",
@@ -97,11 +113,12 @@ export default async function handler(req, res) {
     const notFound = [];
     
     for (const option of options) {
-      // ข้ามถ้ามี labelEn อยู่แล้ว
-      if (option.labelEn && option.labelEn.trim() !== "") {
+      const en = option.labelEn?.trim() || "";
+      const needsTranslation = !en || /^\[TH\]/i.test(en);
+      if (!needsTranslation) {
         continue;
       }
-      
+
       const englishLabel = thaiToEnglishMap[option.label];
       
       if (englishLabel) {

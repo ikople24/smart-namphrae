@@ -2,9 +2,11 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { BadgeCheck } from "lucide-react";
 import { useAdminOptionsStore } from "@/stores/useAdminOptionsStore";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function CardAssignment({ probId }) {
   const [assignment, setAssignment] = useState(null);
+  const { t, language } = useTranslation();
   const adminOptions = useAdminOptionsStore((state) => state.adminOptions);
   const fetchAdminOptions = useAdminOptionsStore.getState().fetchAdminOptions;
   useEffect(() => {
@@ -86,11 +88,20 @@ export default function CardAssignment({ probId }) {
     return null;
   }
 
+  const getOptionLabel = (option) => {
+    const englishLabel = option?.label_en?.trim();
+    if (language === "en" && englishLabel && !/^\[TH\]/i.test(englishLabel)) {
+      return englishLabel;
+    }
+
+    return option?.label || "";
+  };
+
   return (
     <>
       <div className="max-w-4xl mx-auto bg-white shadow-md rounded-md p-[6px]">
         <div className="flex flex-col justify-between space-y-4">
-          <div className="text-lg font-semibold text-gray-800 mb-2">การดำเนินการ</div>
+          <div className="text-lg font-semibold text-gray-800 mb-2">{t.assignment.title}</div>
           {/* วิธีดำเนินการ Section */}
           {Array.isArray(assignment?.solutionImages) && assignment.solutionImages.length > 0 && (
             <div>
@@ -126,33 +137,37 @@ export default function CardAssignment({ probId }) {
           {/* เจ้าหน้าที่ Section */}
           <div className={`${Array.isArray(assignment?.solutionImages) && assignment.solutionImages.length > 0 ? 'grid grid-cols-5 gap-4 items-start h-full' : 'w-full'}`}>
             <div className={`${Array.isArray(assignment?.solutionImages) && assignment.solutionImages.length > 0 ? 'col-span-3 pr-6 border-r border-gray-300 h-full' : 'w-full'}`}>
-              <div className="text-md font-semibold mb-4">วิธีดำเนินการ (ทั้งหมด)</div>
+              <div className="text-md font-semibold mb-4">{t.assignment.solutionAll}</div>
               <div className="space-y-3">
                 {matchedOptions && matchedOptions.length > 0 ? (
-                  matchedOptions.map((opt) => (
-                    <div key={opt.label} className="flex flex-col-2 justify-between items-center gap-3">
-                      <div className="flex items-center gap-2">
-                        <Image
-                          src={opt.icon_url || "/check-icon.png"}
-                          alt="icon"
-                          width={24}
-                          height={24}
-                          className="w-6 h-6"
-                        />
-                        <span className="text-sm text-gray-800">{opt.label}</span>
+                  matchedOptions.map((opt) => {
+                    const displayLabel = getOptionLabel(opt);
+
+                    return (
+                      <div key={opt.label} className="flex flex-col-2 justify-between items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <Image
+                            src={opt.icon_url || "/check-icon.png"}
+                            alt={displayLabel}
+                            width={24}
+                            height={24}
+                            className="w-6 h-6"
+                          />
+                          <span className="text-sm text-gray-800">{displayLabel}</span>
+                        </div>
+                        <BadgeCheck className="w-4 h-4 text-green-500" />
                       </div>
-                      <BadgeCheck className="w-4 h-4 text-green-500" />
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
-                  <div className="text-gray-500 text-sm">ไม่มีข้อมูลวิธีดำเนินการ</div>
+                  <div className="text-gray-500 text-sm">{t.assignment.noSolution}</div>
                 )}
               </div>
             </div>
             <div className={`${Array.isArray(assignment?.solutionImages) && assignment.solutionImages.length > 0 ? 'col-span-2' : 'w-full mt-4'}`}>
-              <div className="text-md font-semibold mb-2">บันทึกเจ้าหน้าที่</div>
+              <div className="text-md font-semibold mb-2">{t.assignment.officerNote}</div>
               <div className="bg-green-200 border border-green-200 rounded-md p-4 text-green-800 text-sm">
-                <p>{assignment?.note || "ไม่มีบันทึกเจ้าหน้าที่"}</p>
+                <p>{assignment?.note || t.assignment.noOfficerNote}</p>
               </div>
             </div>
           </div>

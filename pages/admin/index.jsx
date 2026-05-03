@@ -56,19 +56,16 @@ export default function AdminPage() {
   const handleDelete = async (id) => {
     if (!confirm("คุณแน่ใจหรือว่าต้องการลบรายการนี้?")) return;
 
-    const BASE_URL =
-      process.env.NODE_ENV === "development"
-        ? "http://localhost:3004"
-        : "https://express-docker-server-production.up.railway.app";
-
-    const endpoint = isAdminTab ? "/api/admin-options" : "/api/problem-options";
+    const endpoint = isAdminTab ? "/api/admin-options" : "/api/problemoptions";
 
     try {
-      const res = await fetch(`${BASE_URL}${endpoint}/${id}`, {
+      const res = await fetch(endpoint, {
         method: "DELETE",
         headers: {
+          "Content-Type": "application/json",
           "x-app-id": process.env.NEXT_PUBLIC_APP_ID,
-        }
+        },
+        body: JSON.stringify({ _id: id }),
       });
 
       if (!res.ok) throw new Error("Failed to delete");
@@ -89,6 +86,7 @@ export default function AdminPage() {
     e.preventDefault();
     const data = isAdminTab
       ? {
+          ...(isEditing ? { _id: editingId } : {}),
           label,
           label_en: labelEn,
           icon_url: iconUrl,
@@ -96,6 +94,7 @@ export default function AdminPage() {
           active: true,
         }
       : {
+          ...(isEditing ? { _id: editingId } : {}),
           label,
           labelEn,
           iconUrl,
@@ -103,17 +102,11 @@ export default function AdminPage() {
           active: true,
         };
 
-    const BASE_URL =
-      process.env.NODE_ENV === "development"
-        ? "http://localhost:3004"
-        : "https://express-docker-server-production.up.railway.app";
-
-    const endpoint = isAdminTab ? "/api/admin-options" : "/api/problem-options";
+    const endpoint = isAdminTab ? "/api/admin-options" : "/api/problemoptions";
     const method = isEditing ? "PUT" : "POST";
-    const url = isEditing ? `${BASE_URL}${endpoint}/${editingId}` : `${BASE_URL}${endpoint}`;
 
     try {
-      const res = await fetch(url, {
+      const res = await fetch(endpoint, {
         method,
         headers: {
           "Content-Type": "application/json",
