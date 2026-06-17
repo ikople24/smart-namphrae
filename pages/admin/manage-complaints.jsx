@@ -3,11 +3,21 @@ import { useUser } from "@clerk/nextjs";
 import { useAuth } from "@clerk/nextjs";
 import Head from "next/head";
 import {
+  BellRing,
+  CheckCircle2,
   Download,
   Eye,
+  FileText,
   LayoutGrid,
   List,
+  MapPin,
+  Pencil,
+  RotateCcw,
   Search,
+  Sparkles,
+  Trash2,
+  TrendingUp,
+  UserPlus,
 } from "lucide-react";
 import useComplaintStore from "@/stores/useComplaintStore";
 import { useMenuStore } from "@/stores/useMenuStore";
@@ -156,16 +166,32 @@ function ActionMenu({
         tabIndex={0}
         className="dropdown-content z-[200] menu p-2 shadow-lg bg-base-100 rounded-box w-56 max-h-80 overflow-y-auto border border-slate-200 text-sm"
       >
+        {complaint.location?.lat && complaint.location?.lng && (
+          <li>
+            <a
+              href={`https://www.google.com/maps?q=${complaint.location.lat},${complaint.location.lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-sky-700"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              ดูตำแหน่งบน Google Maps
+            </a>
+          </li>
+        )}
         {!isClosed ? (
           isAssigned ? (
             <>
               <li>
-                <button type="button" onClick={() => onOpenUpdate(assignment)}>
+                <button type="button" onClick={() => onOpenUpdate(assignment)} className="flex items-center gap-2">
+                  <TrendingUp className="w-3.5 h-3.5 shrink-0" />
                   อัปเดตความคืบหน้า
                 </button>
               </li>
               <li>
-                <button type="button" onClick={() => onEditUser(complaint)}>
+                <button type="button" onClick={() => onEditUser(complaint)} className="flex items-center gap-2">
+                  <Pencil className="w-3.5 h-3.5 shrink-0" />
                   แก้ไขข้อมูล
                 </button>
               </li>
@@ -173,21 +199,25 @@ function ActionMenu({
                 <button
                   type="button"
                   onClick={() => onClean(complaint.complaintId)}
+                  className="flex items-center gap-2"
                 >
+                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
                   ทำความสะอาด & ส่งแจ้งเตือน
                 </button>
               </li>
               <li>
-                <button type="button" onClick={() => onResend(complaint)}>
+                <button type="button" onClick={() => onResend(complaint)} className="flex items-center gap-2">
+                  <BellRing className="w-3.5 h-3.5 shrink-0" />
                   ส่งแจ้งเตือนอีกครั้ง
                 </button>
               </li>
               <li>
                 <button
                   type="button"
-                  className="text-success"
+                  className="flex items-center gap-2 text-success"
                   onClick={() => onCloseComplaint(complaint._id)}
                 >
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
                   ปิดเรื่อง
                 </button>
               </li>
@@ -196,10 +226,11 @@ function ActionMenu({
             <li>
               <button
                 type="button"
-                className="text-primary font-medium"
+                className="flex items-center gap-2 text-primary font-medium"
                 disabled={loading}
                 onClick={() => onAssign(complaint._id)}
               >
+                <UserPlus className="w-3.5 h-3.5 shrink-0" />
                 รับเรื่อง (มอบหมายให้ฉัน)
               </button>
             </li>
@@ -219,6 +250,7 @@ function ActionMenu({
                     <li>
                       <button
                         type="button"
+                        className="flex items-center gap-2"
                         onClick={() => {
                           if (
                             confirm(
@@ -229,36 +261,43 @@ function ActionMenu({
                           }
                         }}
                       >
+                        <RotateCcw className="w-3.5 h-3.5 shrink-0" />
                         เปิดเรื่องใหม่
                       </button>
                     </li>
                     <li>
                       <button
                         type="button"
+                        className="flex items-center gap-2"
                         onClick={() => onOpenUpdate(assignment)}
                       >
+                        <FileText className="w-3.5 h-3.5 shrink-0" />
                         แก้ไขรายละเอียดงาน
                       </button>
                     </li>
                     <li>
-                      <button type="button" onClick={() => onEditUser(complaint)}>
+                      <button type="button" className="flex items-center gap-2" onClick={() => onEditUser(complaint)}>
+                        <Pencil className="w-3.5 h-3.5 shrink-0" />
                         แก้ไขข้อมูล
                       </button>
                     </li>
                     <li>
                       <button
                         type="button"
+                        className="flex items-center gap-2"
                         onClick={() => onClean(complaint.complaintId)}
                       >
+                        <Sparkles className="w-3.5 h-3.5 shrink-0" />
                         ทำความสะอาด & ส่งแจ้งเตือน
                       </button>
                     </li>
                     <li>
                       <button
                         type="button"
-                        className="text-error"
+                        className="flex items-center gap-2 text-error"
                         onClick={() => onDelete(complaint._id)}
                       >
+                        <Trash2 className="w-3.5 h-3.5 shrink-0" />
                         ลบเรื่อง
                       </button>
                     </li>
@@ -268,16 +307,18 @@ function ActionMenu({
               return (
                 <>
                   <li>
-                    <button type="button" onClick={() => onEditUser(complaint)}>
+                    <button type="button" className="flex items-center gap-2" onClick={() => onEditUser(complaint)}>
+                      <Pencil className="w-3.5 h-3.5 shrink-0" />
                       แก้ไขข้อมูล
                     </button>
                   </li>
                   <li>
                     <button
                       type="button"
-                      className="text-error"
+                      className="flex items-center gap-2 text-error"
                       onClick={() => onDelete(complaint._id)}
                     >
+                      <Trash2 className="w-3.5 h-3.5 shrink-0" />
                       ลบเรื่อง
                     </button>
                   </li>
