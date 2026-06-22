@@ -13,7 +13,8 @@ export default async function handler(req, res) {
     const data = await response.json();
     const users = (data.users || data);
     const safeUsers = Array.isArray(users)
-      ? users.map(({ idCard, phone, clerkId, ...safe }) => safe)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      ? users.map(({ idCard: _ic, phone: _ph, clerkId: _ck, ...safe }) => safe)
       : users;
     return res.status(response.status).json(safeUsers);
   } catch (error) {
