@@ -26,6 +26,7 @@ const ComplaintFormModal = ({ selectedLabel, onClose }) => {
   const [fullName, setFullName] = useState('');
 
   const [phone, setPhone] = useState('');
+  const [idCard, setIdCard] = useState('');
   const [detail, setDetail] = useState('');
   const [imageUrls, setImageUrls] = useState([]);
   const [useCurrentLocation, setUseCurrentLocation] = useState(false);
@@ -151,6 +152,7 @@ const ComplaintFormModal = ({ selectedLabel, onClose }) => {
     const payload = {
       fullName: fullName.trim(),
       phone: phone.trim(),
+      idCard: idCard.trim(),
       community: selectedCommunity,
       problems: selectedProblems.map(id => {
         const match = problemOptions.find(opt => opt._id === id);
@@ -379,6 +381,8 @@ const ComplaintFormModal = ({ selectedLabel, onClose }) => {
             setFullName={setFullName}
             phone={phone}
             setPhone={setPhone}
+            idCard={idCard}
+            setIdCard={setIdCard}
             detail={detail}
             setDetail={setDetail}
             validateTrigger={validateTrigger}

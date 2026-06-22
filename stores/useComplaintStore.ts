@@ -6,6 +6,7 @@ interface Complaint {
   complaintId: string;
   fullName: string;
   phone: string;
+  idCard?: string;
   community: string;
   problems: string[];
   category: string;
@@ -37,7 +38,7 @@ const useComplaintStore = create<ComplaintState>((set) => ({
   fetchComplaints: async (status?: string) => {
     set({ isLoading: true, error: null });
     try {
-      const url = status ? `/api/complaints?status=${encodeURIComponent(status)}&role=admin` : '/api/complaints?role=admin';
+      const url = status ? `/api/complaints?status=${encodeURIComponent(status)}` : '/api/complaints';
       const res = await axios.get<Complaint[]>(url);
       set({ complaints: res.data, isLoading: false });
     } catch (err: any) {

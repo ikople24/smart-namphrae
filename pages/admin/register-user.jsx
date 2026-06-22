@@ -41,6 +41,7 @@ export default function RegisterUserPage() {
     profileUrl: "",
     assignedTask: [], // เริ่มต้นด้วย array ว่าง
     phone: "",
+    idCard: "",
   });
 
   const [existingUser, setExistingUser] = useState(null);
@@ -58,9 +59,18 @@ export default function RegisterUserPage() {
     profileUrl: z.string().optional(),
     assignedTask: z.array(z.string()).min(1, "กรุณาเลือกงานที่ได้รับมอบหมายอย่างน้อย 1 รายการ"),
     phone: z.string().length(10, "เบอร์โทรศัพท์ต้องมี 10 หลัก"),
+    idCard: z.string().refine(
+      (val) => val === "" || val.length === 13,
+      "เลขบัตรประชาชนต้องมี 13 หลัก"
+    ).optional(),
   });
 
   const phoneRefs = useRef([]);
+  const idCardRefs = useRef([]);
+  const idCardGroups = [1, 4, 5, 2, 1];
+  const idCardSeparators = idCardGroups
+    .slice(0, -1)
+    .reduce((acc, val) => [...acc, (acc[acc.length - 1] ?? -1) + val], []);
 
   useEffect(() => {
     if (user?.id) {
@@ -169,6 +179,7 @@ export default function RegisterUserPage() {
         profileUrl: existingUser.profileUrl || user?.imageUrl || "",
         assignedTask: uniqueAssignedTaskArray, // ใช้ unique array
         phone: existingUser.phone || "",
+        idCard: existingUser.idCard || "",
       });
       
       console.log("🔧 Edit mode - Original assignedTask:", existingUser.assignedTask);
@@ -203,6 +214,7 @@ export default function RegisterUserPage() {
       profileUrl: "",
       assignedTask: [], // เริ่มต้นด้วย array ว่าง
       phone: "",
+      idCard: "",
     });
   };
 
@@ -366,6 +378,7 @@ export default function RegisterUserPage() {
             profileUrl: "",
             assignedTask: [], // เริ่มต้นด้วย array ว่าง
             phone: "",
+            idCard: "",
           });
         }
       } else {
@@ -556,6 +569,18 @@ export default function RegisterUserPage() {
                 className="input input-bordered w-full bg-gray-100"
               />
             </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text">เลขบัตรประชาชน</span>
+              </label>
+              <input
+                type="text"
+                value={existingUser.idCard || "ไม่ได้ระบุ"}
+                readOnly
+                className="input input-bordered w-full bg-gray-100"
+              />
+            </div>
           </div>
         ) : (
           <form 
@@ -696,6 +721,43 @@ export default function RegisterUserPage() {
                       }}
                     />
                     {(i === 2 || i === 6) && (
+                      <div className="absolute -right-2 top-1/2 -translate-y-1/2 text-gray-400">
+                        -
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text">เลขบัตรประชาชน</span>
+                <span className="label-text-alt text-gray-400 text-xs">ไม่บังคับ</span>
+              </label>
+              <div className="flex flex-wrap gap-x-1.5 gap-y-2 md:gap-x-2">
+                {[...Array(13)].map((_, i) => (
+                  <div key={i} className="relative">
+                    <input
+                      ref={(el) => (idCardRefs.current[i] = el)}
+                      type="tel"
+                      inputMode="numeric"
+                      maxLength={1}
+                      disabled={isSubmitting}
+                      className={`input input-bordered w-9 text-center ${isSubmitting ? 'bg-gray-100' : ''}`}
+                      value={form.idCard?.[i] || ""}
+                      onChange={(e) => {
+                        if (isSubmitting) return;
+                        const newChar = e.target.value.replace(/\D/, "");
+                        const updated = (form.idCard || "").split("");
+                        updated[i] = newChar;
+                        setForm({ ...form, idCard: updated.join("") });
+                        if (newChar && idCardRefs.current[i + 1]) {
+                          idCardRefs.current[i + 1].focus();
+                        }
+                      }}
+                    />
+                    {idCardSeparators.includes(i) && (
                       <div className="absolute -right-2 top-1/2 -translate-y-1/2 text-gray-400">
                         -
                       </div>
