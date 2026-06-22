@@ -213,6 +213,17 @@ export default function EditUserModal({ isOpen, onClose, complaint }) {
                       />
                     </div>
                   </div>
+                  {reporterInfo.idCard && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">เลขบัตรประชาชน</label>
+                      <input
+                        type="text"
+                        value={reporterInfo.idCard}
+                        readOnly
+                        className="input input-bordered w-full bg-gray-50 font-mono tracking-widest"
+                      />
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">รายละเอียด</label>
                     <textarea

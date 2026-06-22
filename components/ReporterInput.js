@@ -2,6 +2,15 @@ import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { z } from "zod";
 import { useTranslation } from "@/hooks/useTranslation";
 
+const validateThaiId = (id) => {
+  if (!/^[0-9]{13}$/.test(id)) return false;
+  let sum = 0;
+  for (let i = 0; i < 12; i++) {
+    sum += parseInt(id[i]) * (13 - i);
+  }
+  return (11 - (sum % 11)) % 10 === parseInt(id[12]);
+};
+
 const ReporterInput = ({
   prefix,
   setPrefix,
@@ -9,6 +18,8 @@ const ReporterInput = ({
   setFullName,
   phone,
   setPhone,
+  idCard,
+  setIdCard,
   detail,
   setDetail,
   validateTrigger = false,
@@ -22,11 +33,15 @@ const ReporterInput = ({
     fullName: z.string().min(1, t.form.validation.enterName),
     phone: z.string()
       .regex(/^[0-9]{10}$/, t.form.validation.enterPhone),
+    idCard: z.string().refine(
+      (val) => val === "" || validateThaiId(val),
+      "เลขบัตรประชาชนไม่ถูกต้อง"
+    ).optional(),
     detail: z.string().min(1, t.form.validation.enterDetail),
   }), [t.form.validation.enterName, t.form.validation.enterPhone, t.form.validation.enterDetail]);
 
   const validate = useCallback(() => {
-    const result = reporterSchema.safeParse({ prefix, fullName, phone, detail });
+    const result = reporterSchema.safeParse({ prefix, fullName, phone, idCard, detail });
     if (!result.success) {
       setErrors(result.error.flatten().fieldErrors);
       setValid(false);
@@ -34,12 +49,25 @@ const ReporterInput = ({
       setErrors({});
       setValid(true);
     }
-  }, [reporterSchema, prefix, fullName, phone, detail, setValid]);
+  }, [reporterSchema, prefix, fullName, phone, idCard, detail, setValid]);
 
   useEffect(() => {
     if (!validateTrigger) return;
     validate();
   }, [validateTrigger, validate]);
+
+  // แสดง error เลขบัตรทันทีเมื่อกรอกครบ 13 หลักแต่ไม่ผ่าน checksum
+  useEffect(() => {
+    if (!idCard || idCard.length < 13) {
+      setErrors((prev) => ({ ...prev, idCard: undefined }));
+      return;
+    }
+    if (!validateThaiId(idCard)) {
+      setErrors((prev) => ({ ...prev, idCard: ["เลขบัตรประชาชนไม่ถูกต้อง"] }));
+    } else {
+      setErrors((prev) => ({ ...prev, idCard: undefined }));
+    }
+  }, [idCard]);
 
   return (
     <div className="flex flex-col space-y-2">
@@ -133,6 +161,26 @@ const ReporterInput = ({
             />
           </svg>
         </div>
+      </div>
+
+      <div className="flex flex-col space-y-2 mt-2">
+        <div className="flex justify-between items-center">
+          <label className="text-sm font-medium text-gray-800">
+            {language === 'en' ? 'ID Card Number' : 'เลขบัตรประชาชน'}
+            <span className="ml-2 text-xs text-gray-400">{language === 'en' ? '(optional)' : '(ไม่บังคับ)'}</span>
+          </label>
+          {errors.idCard && <p className="text-sm text-red-500 text-right ml-2">{errors.idCard[0]}</p>}
+        </div>
+        <input
+          type="tel"
+          className="input input-bordered w-full bg-blue-50 text-blue-900 border-blue-300 placeholder:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 tabular-nums"
+          placeholder={language === 'en' ? '13-digit ID number' : 'เลขบัตรประชาชน 13 หลัก'}
+          inputMode="numeric"
+          pattern="\d*"
+          maxLength="13"
+          value={idCard || ""}
+          onChange={(e) => setIdCard(e.target.value.replace(/\D/g, ""))}
+        />
       </div>
     </div>
   );

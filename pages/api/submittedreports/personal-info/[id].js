@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   try {
     // ดึงข้อมูลครบถ้วนรวมถึงรายละเอียด ภาพ และข้อมูลอื่นๆ
     const report = await SubmittedReport.findById(id).select(
-      "fullName phone location detail images status createdAt updatedAt complaintId"
+      "fullName phone idCard location detail images status createdAt updatedAt complaintId"
     );
 
     if (!report) {
