@@ -167,7 +167,6 @@ const ReporterInput = ({
         <div className="flex justify-between items-center">
           <label className="text-sm font-medium text-gray-800">
             {language === 'en' ? 'ID Card Number' : 'เลขบัตรประชาชน'}
-            <span className="ml-2 text-xs text-gray-400">{language === 'en' ? '(optional)' : '(ไม่บังคับ)'}</span>
           </label>
           {errors.idCard && <p className="text-sm text-red-500 text-right ml-2">{errors.idCard[0]}</p>}
         </div>
