@@ -8,7 +8,6 @@ import { useTranslation } from "@/hooks/useTranslation";
 export default function CardOfficail(props) {
   // console.log("CardOfficail received props:", props);
     const { t, language } = useTranslation();
-    const [assignments, setAssignments] = useState([]);
     const [assignedDate, setAssignedDate] = useState(null);
     const [completedDate, setCompletedDate] = useState(null);
     const [officer, setOfficer] = useState(null);
@@ -20,15 +19,24 @@ export default function CardOfficail(props) {
         const res = await fetch("/api/assignments");
         const data = await res.json();
         // console.log("Fetched assignments:", data);
-        setAssignments(data);
         if (props.probId) {
           const responsibleAssignments = data.filter(
             assignment => assignment.complaintId === props.probId
           );
           // console.log("Filtered assignments by complaintId:", responsibleAssignments); //debug:
           if (responsibleAssignments.length > 0) {
-            setAssignedDate(responsibleAssignments[0].assignedAt);
-            setCompletedDate(responsibleAssignments[0].completedAt);
+            const ra = responsibleAssignments[0];
+            setAssignedDate(ra.assignedAt);
+            setCompletedDate(ra.completedAt);
+            // ใช้ข้อมูลเจ้าหน้าที่ที่ populate มากับ assignment (Mongo) โดยตรง
+            // แทนการดึงรายชื่อ user จาก backend ภายนอกที่อาจล่ม/ตอบ 401
+            if (ra.assignee && ra.assignee.name) {
+              setOfficer({
+                name: ra.assignee.name,
+                department: ra.assignee.department || "",
+                profileUrl: ra.assignee.profileImage || "",
+              });
+            }
           }
         }
       } catch (error) {
@@ -38,32 +46,11 @@ export default function CardOfficail(props) {
 
     fetchAssignments();
   }, [props.probId]);
-  useEffect(() => {
-    const fetchOfficer = async () => {
-      try {
-        if (!assignments[0]?.userId) return;
 
-        const res = await fetch("/api/users/get-all-user");
-        const data = await res.json();
-        const users = data.users || data;
-        const matchedUserId = assignments[0].userId;
-
-        const officerData = users.find(user => user._id === matchedUserId);
-        // console.log("Matched officer:", officerData); //debug:
-
-        if (officerData) {
-          setOfficer(officerData);
-        }
-      } catch (error) {
-        console.error("Error fetching users:", error);
-      }
-    };
-
-    fetchOfficer();
-  }, [assignments]);
-
-  // Conditionally render nothing if no officer or assignedDate is found
-  if (!assignedDate || !officer) {
+  // ซ่อนการ์ดเฉพาะเมื่อเรื่องยังไม่ถูกมอบหมาย (ไม่ผูกกับการโหลดข้อมูลเจ้าหน้าที่)
+  // เพื่อให้ปุ่มประเมินฝั่งประชาชนแสดงเสมอสำหรับเรื่องที่ถูกมอบหมาย/เสร็จสิ้น
+  // ส่วนแสดงชื่อเจ้าหน้าที่ด้านล่างมี fallback เป็น "ไม่ทราบชื่อเจ้าหน้าที่" อยู่แล้ว
+  if (!assignedDate) {
     return null;
   }
 
@@ -89,8 +76,8 @@ export default function CardOfficail(props) {
             className="rounded-full object-cover"
           />
           <div className="textarea-xs font-semibold text-gray-500 leading-tight text-center">
-            {officer
-              ? `${officer.name.split(" ").slice(1).join(" ")} (${officer.department})`
+            {officer?.name
+              ? `${officer.name.split(" ").slice(1).join(" ")}${officer.department ? ` (${officer.department})` : ""}`
               : t.official.unknownOfficer}
           </div>
         </div>
