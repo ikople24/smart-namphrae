@@ -185,6 +185,14 @@ export default function CardModalDetail({ modalData, onClose }) {
                 )}
               </div>
             </div>
+            {modalData.patientName && (
+              <div>
+                <div className="font-semibold mb-1">{t.complaint.patientName}</div>
+                <div className="bg-blue-50 p-3 text-sm text-gray-700 rounded border">
+                  {modalData.patientName}
+                </div>
+              </div>
+            )}
             <div>
               <div className="font-semibold mb-1">{t.complaint.detail}</div>
               <div className="bg-yellow-50 p-3 text-sm text-gray-700 rounded border">

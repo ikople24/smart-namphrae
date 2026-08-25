@@ -118,7 +118,8 @@
     "reporter": "Reporter",
     "phone": "Phone Number",
     "problem": "Problem",
-    "problems": "Problems Found"
+    "problems": "Problems Found",
+    "patientName": "Patient"
   },
   "status": {
     "pending": "Pending",
@@ -160,6 +161,12 @@
       "mrs": "Mrs.",
       "ms": "Ms."
     },
+    "patient": {
+      "sectionTitle": "Patient Information",
+      "name": "Patient full name",
+      "isSelf": "The reporter is the patient",
+      "placeholder": "e.g. Somsri Jaidee"
+    },
     "placeholder": {
       "detail": "Describe the problem, specify house number or street name to help officers investigate",
       "phone": "Enter 10 digits",
@@ -174,7 +181,8 @@
       "selectLocation": "Please select location",
       "uploadImage": "Please upload at least 1 image",
       "enterReporterName": "Please enter reporter name",
-      "selectProblem": "Please select at least 1 problem"
+      "selectProblem": "Please select at least 1 problem",
+      "enterPatientName": "Please enter the patient's full name"
     },
     "alert": {
       "pleaseWait": "Please wait",

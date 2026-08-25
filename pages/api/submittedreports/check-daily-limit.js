@@ -1,14 +1,7 @@
 // pages/api/submittedreports/check-daily-limit.js
 import dbConnect from "@/lib/dbConnect";
 import SubmittedReport from "@/models/SubmittedReport";
-
-// รายการปัญหาที่มีการจำกัดจำนวนต่อวัน
-const DAILY_LIMITED_PROBLEMS = {
-  "ขอรถรับ-ส่งไปโรงพยาบาล": {
-    limit: 3,
-    labelEn: "Hospital Transport Request"
-  }
-};
+import { getDailyLimit } from "@/lib/problemRules";
 
 export default async function handler(req, res) {
   if (req.method !== "GET" && req.method !== "POST") {
@@ -31,7 +24,7 @@ export default async function handler(req, res) {
     }
 
     // ตรวจสอบว่า problem นี้มีการจำกัดหรือไม่
-    const limitConfig = DAILY_LIMITED_PROBLEMS[problemLabel];
+    const limitConfig = getDailyLimit(problemLabel);
     
     if (!limitConfig) {
       return res.status(200).json({ 
@@ -79,7 +72,3 @@ export default async function handler(req, res) {
     });
   }
 }
-
-// Export สำหรับใช้ใน submit-report.js
-export { DAILY_LIMITED_PROBLEMS };
-
