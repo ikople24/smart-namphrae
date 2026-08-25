@@ -2,14 +2,7 @@
 import dbConnect from "@/lib/dbConnect";
 import SubmittedReport from "@/models/SubmittedReport";
 import getNextSequence from "@/lib/getNextSequence";
-
-// รายการปัญหาที่มีการจำกัดจำนวนต่อวัน
-const DAILY_LIMITED_PROBLEMS = {
-  "ขอรถรับ-ส่งไปโรงพยาบาล": {
-    limit: 3,
-    labelEn: "Hospital Transport Request"
-  }
-};
+import { getDailyLimit } from "@/lib/problemRules";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
@@ -29,7 +22,7 @@ export default async function handler(req, res) {
       endOfDay.setHours(23, 59, 59, 999);
 
       for (const problem of problems) {
-        const limitConfig = DAILY_LIMITED_PROBLEMS[problem];
+        const limitConfig = getDailyLimit(problem);
         if (limitConfig) {
           const todayCount = await SubmittedReport.countDocuments({
             problems: problem,

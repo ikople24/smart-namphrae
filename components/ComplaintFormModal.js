@@ -10,10 +10,8 @@ import { z } from 'zod';
 import Image from 'next/image';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getProblemDisplayLabel } from '@/utils/problemDisplayLabel';
+import { getDailyLimit } from '@/lib/problemRules';
 const LocationConfirm = dynamic(() => import('./LocationConfirm'), { ssr: false });
-
-// ปัญหาที่มีการจำกัดจำนวนต่อวัน
-const DAILY_LIMITED_PROBLEMS = ['ขอรถรับ-ส่งไปโรงพยาบาล'];
 
 const ComplaintFormModal = ({ selectedLabel, onClose }) => {
   const { t, language } = useTranslation();
@@ -60,7 +58,7 @@ const ComplaintFormModal = ({ selectedLabel, onClose }) => {
     const loadDailyLimits = async () => {
       const filteredOptions = problemOptions.filter(opt => opt.category === selectedLabel);
       const limitedProblems = filteredOptions.filter(opt => 
-        DAILY_LIMITED_PROBLEMS.includes(opt.label)
+        getDailyLimit(opt.label) !== null
       );
 
       const statusMap = {};
