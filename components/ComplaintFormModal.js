@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import CommunitySelector from './CommunitySelector';
 import ReporterInput from './ReporterInput';
+import PatientInfoInput from './PatientInfoInput';
 
 import { useProblemOptionStore } from '@/stores/useProblemOptionStore';
 import ImageUploads from './ImageUploads';
@@ -10,7 +11,7 @@ import { z } from 'zod';
 import Image from 'next/image';
 import { useTranslation } from '@/hooks/useTranslation';
 import { getProblemDisplayLabel } from '@/utils/problemDisplayLabel';
-import { getDailyLimit } from '@/lib/problemRules';
+import { getDailyLimit, requiresPatientName } from '@/lib/problemRules';
 const LocationConfirm = dynamic(() => import('./LocationConfirm'), { ssr: false });
 
 const ComplaintFormModal = ({ selectedLabel, onClose }) => {
@@ -25,6 +26,8 @@ const ComplaintFormModal = ({ selectedLabel, onClose }) => {
 
   const [phone, setPhone] = useState('');
   const [idCard, setIdCard] = useState('');
+  const [patientName, setPatientName] = useState('');
+  const [isPatientSelf, setIsPatientSelf] = useState(false);
   const [detail, setDetail] = useState('');
   const [imageUrls, setImageUrls] = useState([]);
   const [useCurrentLocation, setUseCurrentLocation] = useState(false);
@@ -33,6 +36,7 @@ const ComplaintFormModal = ({ selectedLabel, onClose }) => {
   const [validateTrigger, setValidateTrigger] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const reporterValidRef = useRef(true);
+  const patientValidRef = useRef(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastSubmitTime, setLastSubmitTime] = useState(0);
   
@@ -40,6 +44,26 @@ const ComplaintFormModal = ({ selectedLabel, onClose }) => {
   const [dailyLimitStatus, setDailyLimitStatus] = useState({});
 
   const { problemOptions, fetchProblemOptions } = useProblemOptionStore();
+
+  // แปลง id ของปัญหาที่เลือกเป็น label เพื่อเทียบกับกฎใน lib/problemRules
+  const selectedProblemLabels = useMemo(
+    () =>
+      selectedProblems.map((id) => {
+        const match = problemOptions.find((opt) => opt._id === id);
+        return match ? match.label : id;
+      }),
+    [selectedProblems, problemOptions]
+  );
+
+  const needsPatientInfo = requiresPatientName(selectedProblemLabels);
+
+  // กันชื่อผู้ป่วยค้างไปกับ payload หลังผู้ใช้กดยกเลิกเลือกปัญหา
+  useEffect(() => {
+    if (needsPatientInfo) return;
+    setPatientName('');
+    setIsPatientSelf(false);
+    patientValidRef.current = true;
+  }, [needsPatientInfo]);
 
 // ฟังก์ชันตรวจสอบ daily limit
   const checkDailyLimit = useCallback(async (problemLabel) => {
@@ -133,6 +157,10 @@ const ComplaintFormModal = ({ selectedLabel, onClose }) => {
       validationErrors.push(t.form.validation.selectProblem);
     }
 
+    if (needsPatientInfo && !patientValidRef.current) {
+      validationErrors.push(t.form.validation.enterPatientName);
+    }
+
     if (validationErrors.length > 0) {
       await Swal.fire({
         icon: 'warning',
@@ -151,6 +179,7 @@ const ComplaintFormModal = ({ selectedLabel, onClose }) => {
       fullName: fullName.trim(),
       phone: phone.trim(),
       idCard: idCard.trim(),
+      ...(needsPatientInfo ? { patientName: patientName.trim() } : {}),
       community: selectedCommunity,
       problems: selectedProblems.map(id => {
         const match = problemOptions.find(opt => opt._id === id);
@@ -244,6 +273,9 @@ const ComplaintFormModal = ({ selectedLabel, onClose }) => {
     setFullName('');
 
     setPhone('');
+    setIdCard('');
+    setPatientName('');
+    setIsPatientSelf(false);
     setDetail('');
     setImageUrls([]); // Explicitly clear imageUrls
     setUseCurrentLocation(false);
@@ -252,6 +284,7 @@ const ComplaintFormModal = ({ selectedLabel, onClose }) => {
     setValidateTrigger(false);
     setFormErrors({});
     reporterValidRef.current = true;
+    patientValidRef.current = true;
   };
 
   const handleCommunitySelect = (community) => {
@@ -371,6 +404,18 @@ const ComplaintFormModal = ({ selectedLabel, onClose }) => {
                 })}
             </div>
           </div>
+          {needsPatientInfo && (
+            <PatientInfoInput
+              patientName={patientName}
+              setPatientName={setPatientName}
+              isSelf={isPatientSelf}
+              setIsSelf={setIsPatientSelf}
+              reporterPrefix={prefix}
+              reporterFullName={fullName}
+              validateTrigger={validateTrigger}
+              setValid={(v) => (patientValidRef.current = v)}
+            />
+          )}
           <ImageUploads onChange={(urls) => setImageUrls(urls)} />
           <ReporterInput
             prefix={prefix}
