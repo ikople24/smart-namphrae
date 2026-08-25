@@ -2,7 +2,7 @@
 import dbConnect from "@/lib/dbConnect";
 import SubmittedReport from "@/models/SubmittedReport";
 import getNextSequence from "@/lib/getNextSequence";
-import { getDailyLimit } from "@/lib/problemRules";
+import { getDailyLimit, requiresPatientName } from "@/lib/problemRules";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
@@ -70,14 +70,40 @@ export default async function handler(req, res) {
     
     // ทำความสะอาด detail field ก่อนบันทึก
     const cleanDetail = (req.body.detail || '').replace(/[\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim();
+
+    // ตรวจซ้ำฝั่ง server เพราะ validation ฝั่ง client ข้ามได้
+    let cleanPatientName;
+    if (requiresPatientName(problems)) {
+      cleanPatientName = String(req.body.patientName || '')
+        .replace(/[\n\r\t]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      if (!cleanPatientName) {
+        return res.status(400).json({
+          success: false,
+          error: "กรุณากรอกชื่อ-นามสกุลผู้ป่วย",
+          errorCode: "PATIENT_NAME_REQUIRED",
+        });
+      }
+
+      if (cleanPatientName.length > 100) {
+        return res.status(400).json({
+          success: false,
+          error: "ชื่อ-นามสกุลผู้ป่วยยาวเกินกำหนด",
+          errorCode: "PATIENT_NAME_TOO_LONG",
+        });
+      }
+    }
     
     // ลบ updatedAt ที่ส่งมาจาก frontend เพราะจะถูกสร้างโดย Mongoose
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { updatedAt, ...dataToSave } = req.body;
+    const { updatedAt, patientName: rawPatientName, ...dataToSave } = req.body;
     
     const newReport = await SubmittedReport.create({
       ...dataToSave,
       detail: cleanDetail,
+      ...(cleanPatientName ? { patientName: cleanPatientName } : {}),
       complaintId,
       lastNotificationSent: new Date(),
       notificationCount: 1,
@@ -101,6 +127,7 @@ export default async function handler(req, res) {
         location: newReport.location || {},
         status: newReport.status || 'อยู่ระหว่างดำเนินการ',
         officer: newReport.officer || '',
+        ...(newReport.patientName ? { patientName: newReport.patientName } : {}),
         
         // ข้อมูลเพิ่มเติม
         _id: newReport._id.toString(),
