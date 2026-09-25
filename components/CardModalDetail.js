@@ -218,35 +218,40 @@ export default function CardModalDetail({ modalData, onClose }) {
             </div>
 
           </div>
+
+          {/* ภาพขยาย — ต้องอยู่ใน Dialog.Panel: Headless UI v2 ทำให้ทุกอย่างนอก Dialog
+              เป็น inert (แตะ/กดปิดไม่ได้) และการแตะนอก Panel จะปิด modal ทั้งอัน */}
+          {previewImg && (
+            <div
+              className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+              onClick={() => setPreviewImg(null)}
+            >
+              <div className="relative" onClick={(e) => e.stopPropagation()}>
+                <Image
+                  src={previewImg}
+                  alt="Preview"
+                  width={800}
+                  height={600}
+                  sizes="(max-width: 768px) 100vw, 800px"
+                  className={`object-contain rounded-lg shadow-lg w-auto h-auto max-w-[92vw] max-h-[80vh] ${!isAdmin && modalData.blurImage ? "blur-sm" : ""}`}
+                />
+                <button
+                  type="button"
+                  aria-label={t.common.close}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPreviewImg(null);
+                  }}
+                  className="absolute top-2 right-2 w-10 h-10 flex items-center justify-center bg-white/90 hover:bg-white text-black rounded-full text-base shadow"
+                >
+                  ✖
+                </button>
+              </div>
+            </div>
+          )}
         </Dialog.Panel>
       </Dialog>
 
-      {previewImg && (
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm"
-          onClick={() => setPreviewImg(null)}
-        >
-          <div className="relative" onClick={(e) => e.stopPropagation()}>
-            <Image
-              src={previewImg}
-              alt="Preview"
-              width={800}
-              height={600}
-              sizes="(max-width: 768px) 100vw, 800px"
-              className={`object-contain rounded-lg shadow-lg ${!isAdmin && modalData.blurImage ? "blur-sm" : ""}`}
-            />
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setPreviewImg(null);
-              }}
-              className="absolute top-2 right-2 bg-white/80 hover:bg-white text-black rounded-full px-2 py-1 text-sm shadow"
-            >
-              ✖
-            </button>
-          </div>
-        </div>
-      )}
     </>
   );
 }
