@@ -226,14 +226,15 @@ export default function CardModalDetail({ modalData, onClose }) {
               className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
               onClick={() => setPreviewImg(null)}
             >
-              <div className="relative" onClick={(e) => e.stopPropagation()}>
+              {/* กล่องเกือบเต็มจอ + object-contain = ภาพขยายเต็มพื้นที่โดยคงสัดส่วน
+                  (แตะตรงไหนก็ปิด — พื้นที่ว่างข้างภาพแนวตั้งก็เป็นส่วนของกล่องนี้) */}
+              <div className="relative w-full h-[85vh] max-w-4xl">
                 <Image
                   src={previewImg}
                   alt="Preview"
-                  width={800}
-                  height={600}
-                  sizes="(max-width: 768px) 100vw, 800px"
-                  className={`object-contain rounded-lg shadow-lg w-auto h-auto max-w-[92vw] max-h-[80vh] ${!isAdmin && modalData.blurImage ? "blur-sm" : ""}`}
+                  fill
+                  sizes="100vw"
+                  className={`object-contain ${!isAdmin && modalData.blurImage ? "blur-sm" : ""}`}
                 />
                 <button
                   type="button"
