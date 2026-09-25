@@ -18,15 +18,15 @@ export function getProgressStep(complaint, assignment) {
 }
 
 const STEPS = [
-  { key: "received", Icon: FileText, color: "#22C55E" },
-  { key: "assigned", Icon: UserCheck, color: "#4F6EF7" },
+  { key: "received", Icon: FileText, color: "#0EA5E9" },
+  { key: "assigned", Icon: UserCheck, color: "#2563EB" },
   { key: "inProgress", Icon: Clock, color: "#F2A93B" },
   { key: "completed", Icon: CheckCircle2, color: "#16A34A" },
 ];
 
 function StepRow({ step, labels }) {
   return (
-    <div className="mt-3 flex items-center rounded-[14px] bg-[#F8F7FB] px-2 py-2.5">
+    <div className="mt-3 flex items-center rounded-[14px] bg-[#F1F5FB] px-2 py-2.5">
       {STEPS.map(({ key, Icon, color }, i) => {
         const reached = i + 1 <= step;
         return (
@@ -34,13 +34,13 @@ function StepRow({ step, labels }) {
             <div className="flex flex-1 flex-col items-center gap-1">
               <span
                 className="flex h-9 w-9 items-center justify-center rounded-full"
-                style={{ background: reached ? color : "#ECE9F3" }}
+                style={{ background: reached ? color : "#E2E8F0" }}
               >
-                <Icon size={17} color={reached ? "#fff" : "#9590A8"} strokeWidth={2.2} />
+                <Icon size={17} color={reached ? "#fff" : "#94A3B8"} strokeWidth={2.2} />
               </span>
               <span
                 className="text-[10px] font-semibold whitespace-nowrap"
-                style={{ color: reached ? color : "#9590A8" }}
+                style={{ color: reached ? color : "#94A3B8" }}
               >
                 {labels?.[key] || key}
               </span>
@@ -48,7 +48,7 @@ function StepRow({ step, labels }) {
             {i < STEPS.length - 1 && (
               <span
                 className="mb-4 h-[2.5px] w-6 shrink-0 rounded-full"
-                style={{ background: i + 2 <= step ? STEPS[i + 1].color : "#ECE9F3" }}
+                style={{ background: i + 2 <= step ? STEPS[i + 1].color : "#E2E8F0" }}
               />
             )}
           </div>
@@ -165,8 +165,8 @@ export default function ComplaintProgressCard({
       {/* ไล่เงาล่างให้ตัวหนังสือบนรูปอ่านออก */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/60 to-transparent" />
       {dateText && (
-        <span className="absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-[11.5px] font-semibold text-[#1B1830]">
-          <Calendar size={13} className="text-[#4F6EF7]" />
+        <span className="absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-[11.5px] font-semibold text-[#0F172A]">
+          <Calendar size={13} className="text-[#2563EB]" />
           {dateText}
         </span>
       )}
@@ -200,7 +200,7 @@ export default function ComplaintProgressCard({
           onClick?.();
         }
       }}
-      className="block w-full cursor-pointer overflow-hidden rounded-[18px] bg-white text-left shadow-[0_4px_14px_rgba(60,40,100,0.05)] transition hover:-translate-y-0.5"
+      className="block w-full cursor-pointer overflow-hidden rounded-[18px] bg-white text-left shadow-[0_4px_14px_rgba(30,64,175,0.08)] transition hover:-translate-y-0.5"
     >
       {images.length > 0 ? (
         <PhotoSlider images={images} blur={blurImages}>
@@ -209,42 +209,42 @@ export default function ComplaintProgressCard({
       ) : (
         /* ไม่มีรูป — หัวแบบแถบไอคอนหมวดแทน */
         <div className="flex items-center gap-2.5 px-3.5 pt-3.5">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-[12px] bg-[#F1ECFE]">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-[12px] bg-[#EFF6FF]">
             {iconUrl ? (
               <img src={iconUrl} alt="" className="h-full w-full object-contain" />
             ) : (
-              <span className="text-[16px] font-bold text-[#7C3AED]">{category.slice(0, 1)}</span>
+              <span className="text-[16px] font-bold text-[#1D4ED8]">{category.slice(0, 1)}</span>
             )}
           </span>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[15px] font-bold leading-tight text-gray-900">{category}</span>
             {communityLabel && (
-              <span className="mt-0.5 flex items-center gap-1 text-[11.5px] text-[#9590A8]">
+              <span className="mt-0.5 flex items-center gap-1 text-[11.5px] text-[#94A3B8]">
                 <MapPin size={12} className="shrink-0 text-[#F2A93B]" />
                 <span className="truncate">{communityLabel}</span>
               </span>
             )}
           </span>
-          {dateText && <span className="shrink-0 text-[11px] text-[#9590A8]">{dateText}</span>}
+          {dateText && <span className="shrink-0 text-[11px] text-[#94A3B8]">{dateText}</span>}
         </div>
       )}
 
       <div className="px-3.5 pb-3.5 pt-3">
         <div className="flex items-center justify-between gap-2">
           {problemLabels[0] ? (
-            <span className="inline-flex max-w-[65%] items-center rounded-full bg-[#F1ECFE] px-3 py-1 text-[11.5px] font-semibold text-[#7C3AED]">
+            <span className="inline-flex max-w-[65%] items-center rounded-full bg-[#EFF6FF] px-3 py-1 text-[11.5px] font-semibold text-[#1D4ED8]">
               <span className="truncate">{problemLabels[0]}</span>
               {problemLabels.length > 1 && <span className="ml-1 shrink-0">+{problemLabels.length - 1}</span>}
             </span>
           ) : (
             <span />
           )}
-          <span className="shrink-0 font-mono text-[11px] text-[#9590A8]">
+          <span className="shrink-0 font-mono text-[11px] text-[#94A3B8]">
             {complaint.complaintId || String(complaint._id).slice(-8).toUpperCase()}
           </span>
         </div>
         {complaint.detail && (
-          <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-[#4A4458]">{complaint.detail}</p>
+          <p className="mt-2 line-clamp-2 text-[13px] leading-relaxed text-[#475569]">{complaint.detail}</p>
         )}
         <StepRow step={step} labels={stepLabels} />
       </div>

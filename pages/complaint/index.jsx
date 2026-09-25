@@ -72,7 +72,7 @@ export default function ComplaintListPage() {
       <div className="w-full px-4 py-6 mx-auto">
         {/* Header */}
         <div className="flex flex-col items-center text-center mb-4">
-          <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          <h1 className="text-lg font-bold bg-gradient-to-r from-blue-700 to-sky-500 bg-clip-text text-transparent">
             {t.complaint.inProgressTitle}
           </h1>
           {!loading && (
