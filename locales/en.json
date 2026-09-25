@@ -119,7 +119,16 @@
     "phone": "Phone Number",
     "problem": "Problem",
     "problems": "Problems Found",
-    "patientName": "Patient"
+    "patientName": "Patient",
+    "inProgressTitle": "Complaints In Progress",
+    "items": "items",
+    "empty": "No complaints in progress",
+    "steps": {
+      "received": "Received",
+      "assigned": "Assigned",
+      "inProgress": "In Progress",
+      "completed": "Done"
+    }
   },
   "status": {
     "pending": "Pending",

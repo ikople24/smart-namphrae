@@ -119,7 +119,16 @@
     "phone": "เบอร์โทรศัพท์",
     "problem": "ปัญหา",
     "problems": "ปัญหาที่พบ",
-    "patientName": "ผู้ป่วย"
+    "patientName": "ผู้ป่วย",
+    "inProgressTitle": "มีเรื่องอยู่ระหว่างดำเนินการ",
+    "items": "รายการ",
+    "empty": "ไม่มีเรื่องที่อยู่ระหว่างดำเนินการ",
+    "steps": {
+      "received": "รับเรื่อง",
+      "assigned": "มอบหมาย",
+      "inProgress": "ดำเนินการ",
+      "completed": "เสร็จสิ้น"
+    }
   },
   "status": {
     "pending": "รอดำเนินการ",
