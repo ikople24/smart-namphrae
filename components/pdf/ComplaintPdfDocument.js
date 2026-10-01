@@ -18,6 +18,7 @@ Font.register({
 
 const MAP_BOX_SIZE = 220;
 const MAX_PHOTOS = 4;
+const PIN_SIZE = 8;
 
 const styles = StyleSheet.create({
   page: {
@@ -100,9 +101,9 @@ const styles = StyleSheet.create({
   },
   pin: {
     position: "absolute",
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: PIN_SIZE,
+    height: PIN_SIZE,
+    borderRadius: PIN_SIZE / 2,
     backgroundColor: "#dc2626",
     borderWidth: 1,
     borderColor: "#ffffff",
@@ -200,7 +201,7 @@ export default function ComplaintPdfDocument({ complaint, mapTile }) {
             </View>
             <View style={styles.field}>
               <Text style={styles.fieldLabel}>รายละเอียด</Text>
-              <Text>{complaint.detail || "-"}</Text>
+              <Text numberOfLines={6}>{complaint.detail || "-"}</Text>
             </View>
           </View>
 
@@ -213,8 +214,8 @@ export default function ComplaintPdfDocument({ complaint, mapTile }) {
                   style={[
                     styles.pin,
                     {
-                      left: mapTile.pinXRatio * MAP_BOX_SIZE - 4,
-                      top: mapTile.pinYRatio * MAP_BOX_SIZE - 4,
+                      left: mapTile.pinXRatio * MAP_BOX_SIZE - PIN_SIZE / 2,
+                      top: mapTile.pinYRatio * MAP_BOX_SIZE - PIN_SIZE / 2,
                     },
                   ]}
                 />
