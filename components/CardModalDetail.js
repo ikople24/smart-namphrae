@@ -50,9 +50,12 @@ export default function CardModalDetail({ modalData, onClose }) {
   const handlePrintPdf = async () => {
     if (isGeneratingPdf) return;
     setIsGeneratingPdf(true);
-    const { printComplaintPdf } = await import("@/lib/printComplaintPdf");
-    await printComplaintPdf(modalData);
-    setIsGeneratingPdf(false);
+    try {
+      const { printComplaintPdf } = await import("@/lib/printComplaintPdf");
+      await printComplaintPdf(modalData);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
   };
 
   if (!modalData || !modalData.complaintId || !modalData.category) return null;

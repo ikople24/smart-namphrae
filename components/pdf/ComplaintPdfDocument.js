@@ -201,7 +201,7 @@ export default function ComplaintPdfDocument({ complaint, mapTile }) {
             </View>
             <View style={styles.field}>
               <Text style={styles.fieldLabel}>รายละเอียด</Text>
-              <Text numberOfLines={6} style={{ textOverflow: "ellipsis" }}>
+              <Text style={{ maxLines: 6, textOverflow: "ellipsis" }}>
                 {complaint.detail || "-"}
               </Text>
             </View>

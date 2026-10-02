@@ -26,7 +26,6 @@ import { useMenuStore } from "@/stores/useMenuStore";
 import UpdateAssignmentModal from "@/components/UpdateAssignmentModal";
 import EditUserModal from "@/components/EditUserModal";
 import NotificationStatus from "@/components/NotificationStatus";
-import { printComplaintPdf } from "@/lib/printComplaintPdf";
 
 const CLOSED = "ดำเนินการเสร็จสิ้น";
 
@@ -161,8 +160,12 @@ function ActionMenu({
   const handlePrintPdf = async () => {
     if (isPrinting) return;
     setIsPrinting(true);
-    await printComplaintPdf(complaint);
-    setIsPrinting(false);
+    try {
+      const { printComplaintPdf } = await import("@/lib/printComplaintPdf");
+      await printComplaintPdf(complaint);
+    } finally {
+      setIsPrinting(false);
+    }
   };
 
   return (
