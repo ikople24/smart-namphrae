@@ -10,10 +10,6 @@ import SatisfactionChart from "./SatisfactionChart";
 import { useUser } from "@clerk/nextjs";
 import { useTranslation } from "@/hooks/useTranslation";
 import { getProblemDisplayLabel } from "@/utils/problemDisplayLabel";
-import { pdf } from "@react-pdf/renderer";
-import Swal from "sweetalert2";
-import ComplaintPdfDocument from "./pdf/ComplaintPdfDocument";
-import { getStaticMapTile } from "@/lib/osmStaticTile";
 
 export default function CardModalDetail({ modalData, onClose }) {
   const { menu } = useMenuStore();
@@ -54,32 +50,9 @@ export default function CardModalDetail({ modalData, onClose }) {
   const handlePrintPdf = async () => {
     if (isGeneratingPdf) return;
     setIsGeneratingPdf(true);
-    try {
-      const mapTile =
-        modalData.location?.lat && modalData.location?.lng
-          ? getStaticMapTile(modalData.location.lat, modalData.location.lng)
-          : null;
-
-      const blob = await pdf(
-        <ComplaintPdfDocument complaint={modalData} mapTile={mapTile} />
-      ).toBlob();
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${modalData.complaintId}.pdf`;
-      link.click();
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Error generating complaint PDF:", error);
-      Swal.fire({
-        icon: "error",
-        title: "สร้าง PDF ไม่สำเร็จ",
-        text: "กรุณาลองใหม่อีกครั้ง",
-      });
-    } finally {
-      setIsGeneratingPdf(false);
-    }
+    const { printComplaintPdf } = await import("@/lib/printComplaintPdf");
+    await printComplaintPdf(modalData);
+    setIsGeneratingPdf(false);
   };
 
   if (!modalData || !modalData.complaintId || !modalData.category) return null;

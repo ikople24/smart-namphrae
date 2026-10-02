@@ -201,7 +201,9 @@ export default function ComplaintPdfDocument({ complaint, mapTile }) {
             </View>
             <View style={styles.field}>
               <Text style={styles.fieldLabel}>รายละเอียด</Text>
-              <Text numberOfLines={6}>{complaint.detail || "-"}</Text>
+              <Text numberOfLines={6} style={{ textOverflow: "ellipsis" }}>
+                {complaint.detail || "-"}
+              </Text>
             </View>
           </View>
 
@@ -209,7 +211,7 @@ export default function ComplaintPdfDocument({ complaint, mapTile }) {
             <Text style={styles.sectionTitle}>แผนที่พิกัด</Text>
             {mapTile ? (
               <View style={styles.mapBox}>
-                <Image src={mapTile.tileUrl} style={styles.mapImage} />
+                <Image src={mapTile.tileUrl} style={styles.mapImage} alt="" />
                 <View
                   style={[
                     styles.pin,
@@ -234,7 +236,7 @@ export default function ComplaintPdfDocument({ complaint, mapTile }) {
             <Text style={styles.sectionTitle}>รูปภาพประกอบ</Text>
             <View style={styles.photosRow}>
               {photos.map((src, idx) => (
-                <Image key={idx} src={src} style={styles.photo} />
+                <Image key={idx} src={src} style={styles.photo} alt="" />
               ))}
             </View>
           </View>

@@ -10,8 +10,10 @@ import {
   FileText,
   LayoutGrid,
   List,
+  Loader2,
   MapPin,
   Pencil,
+  ReceiptText,
   RotateCcw,
   Search,
   Sparkles,
@@ -24,6 +26,7 @@ import { useMenuStore } from "@/stores/useMenuStore";
 import UpdateAssignmentModal from "@/components/UpdateAssignmentModal";
 import EditUserModal from "@/components/EditUserModal";
 import NotificationStatus from "@/components/NotificationStatus";
+import { printComplaintPdf } from "@/lib/printComplaintPdf";
 
 const CLOSED = "ดำเนินการเสร็จสิ้น";
 
@@ -153,6 +156,15 @@ function ActionMenu({
   onDelete,
   onResend,
 }) {
+  const [isPrinting, setIsPrinting] = useState(false);
+
+  const handlePrintPdf = async () => {
+    if (isPrinting) return;
+    setIsPrinting(true);
+    await printComplaintPdf(complaint);
+    setIsPrinting(false);
+  };
+
   return (
     <div className="dropdown dropdown-end">
       <label
@@ -180,6 +192,21 @@ function ActionMenu({
             </a>
           </li>
         )}
+        <li>
+          <button
+            type="button"
+            className="flex items-center gap-2"
+            onClick={handlePrintPdf}
+            disabled={isPrinting}
+          >
+            {isPrinting ? (
+              <Loader2 className="w-3.5 h-3.5 shrink-0 animate-spin" />
+            ) : (
+              <ReceiptText className="w-3.5 h-3.5 shrink-0" />
+            )}
+            พิมพ์ PDF
+          </button>
+        </li>
         {!isClosed ? (
           isAssigned ? (
             <>
