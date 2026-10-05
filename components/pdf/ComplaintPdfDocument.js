@@ -2,11 +2,25 @@ import {
   Document,
   Page,
   View,
-  Text,
+  Text as PdfText,
   Image,
   Font,
   StyleSheet,
 } from "@react-pdf/renderer";
+
+// Sarabun renders SARA AM (ำ) as two glyphs, which desyncs react-pdf's
+// glyph-to-character mapping and drops characters from the end of the line
+// (e.g. "เทศบาลตำบลน้ำแพร่พัฒนา" -> "...พัฒ"). Pre-decomposing it into
+// NIKHAHIT + SARA AA looks identical and keeps the mapping 1:1.
+const decomposeSaraAm = (child) =>
+  typeof child === "string" ? child.replace(/ำ/g, "ํา") : child;
+
+function Text({ children, ...props }) {
+  const normalized = Array.isArray(children)
+    ? children.map(decomposeSaraAm)
+    : decomposeSaraAm(children);
+  return <PdfText {...props}>{normalized}</PdfText>;
+}
 
 Font.register({
   family: "Sarabun",
@@ -39,6 +53,10 @@ const styles = StyleSheet.create({
   orgTitle: {
     fontSize: 14,
     fontWeight: "bold",
+  },
+  orgSubtitle: {
+    fontSize: 11,
+    marginTop: 2,
   },
   headerRight: {
     textAlign: "right",
@@ -79,12 +97,27 @@ const styles = StyleSheet.create({
     width: MAP_BOX_SIZE,
     height: MAP_BOX_SIZE,
     position: "relative",
+    overflow: "hidden",
+  },
+  // Drawn on top of the tiles, since absolutely positioned tiles cover the
+  // box's own border.
+  mapFrame: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    width: MAP_BOX_SIZE,
+    height: MAP_BOX_SIZE,
     borderWidth: 1,
     borderColor: "#9ca3af",
   },
-  mapImage: {
+  mapTile: {
+    position: "absolute",
     width: MAP_BOX_SIZE,
     height: MAP_BOX_SIZE,
+  },
+  coords: {
+    fontSize: 9,
+    marginTop: 4,
   },
   mapPlaceholder: {
     width: MAP_BOX_SIZE,
@@ -149,19 +182,30 @@ function formatThaiDate(dateValue) {
   });
 }
 
-export default function ComplaintPdfDocument({ complaint, mapTile }) {
+function formatCoord(value) {
+  const num = Number(value);
+  return Number.isFinite(num) ? num.toFixed(6) : "-";
+}
+
+export default function ComplaintPdfDocument({ complaint, mapTiles }) {
   const photos = Array.isArray(complaint.images)
     ? complaint.images.slice(0, MAX_PHOTOS)
     : [];
   const problemsLabel = Array.isArray(complaint.problems)
     ? complaint.problems.join(", ")
     : "-";
+  const hasCoords = complaint.location?.lat && complaint.location?.lng;
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          <Text style={styles.orgTitle}>แบบรายงานคำร้อง</Text>
+          <View>
+            <Text style={styles.orgTitle}>
+              แบบรายงานคำร้องผ่านระบบ smart-namphrae
+            </Text>
+            <Text style={styles.orgSubtitle}>เทศบาลตำบลน้ำแพร่พัฒนา</Text>
+          </View>
           <View style={styles.headerRight}>
             <Text>เลขที่คำร้อง: {complaint.complaintId}</Text>
             <Text>วันที่: {formatThaiDate(complaint.createdAt)}</Text>
@@ -209,25 +253,47 @@ export default function ComplaintPdfDocument({ complaint, mapTile }) {
 
           <View style={styles.mapColumn}>
             <Text style={styles.sectionTitle}>แผนที่พิกัด</Text>
-            {mapTile ? (
+            {mapTiles ? (
               <View style={styles.mapBox}>
-                <Image src={mapTile.tileUrl} style={styles.mapImage} alt="" />
+                {mapTiles.tiles.map((tile) => (
+                  <Image
+                    key={tile.tileUrl}
+                    src={tile.tileUrl}
+                    style={[
+                      styles.mapTile,
+                      {
+                        left: tile.offsetX * MAP_BOX_SIZE,
+                        top: tile.offsetY * MAP_BOX_SIZE,
+                      },
+                    ]}
+                    alt=""
+                  />
+                ))}
                 <View
                   style={[
                     styles.pin,
                     {
-                      left: mapTile.pinXRatio * MAP_BOX_SIZE - PIN_SIZE / 2,
-                      top: mapTile.pinYRatio * MAP_BOX_SIZE - PIN_SIZE / 2,
+                      left: MAP_BOX_SIZE / 2 - PIN_SIZE / 2,
+                      top: MAP_BOX_SIZE / 2 - PIN_SIZE / 2,
                     },
                   ]}
                 />
+                <View style={styles.mapFrame} />
               </View>
             ) : (
               <View style={styles.mapPlaceholder}>
-                <Text>ไม่มีข้อมูลพิกัด</Text>
+                <Text>
+                  {hasCoords ? "โหลดแผนที่ไม่สำเร็จ" : "ไม่มีข้อมูลพิกัด"}
+                </Text>
               </View>
             )}
             <Text style={styles.mapCredit}>© OpenStreetMap contributors</Text>
+            {hasCoords ? (
+              <View style={styles.coords}>
+                <Text>ละติจูด: {formatCoord(complaint.location.lat)}</Text>
+                <Text>ลองจิจูด: {formatCoord(complaint.location.lng)}</Text>
+              </View>
+            ) : null}
           </View>
         </View>
 
