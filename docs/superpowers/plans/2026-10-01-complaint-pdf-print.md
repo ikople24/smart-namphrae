@@ -1,6 +1,6 @@
 # พิมพ์คำร้องเป็น PDF — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** เพิ่มปุ่มในหน้ารายละเอียดคำร้อง (`CardModalDetail.js`) ที่เจ้าหน้าที่ (role `admin`/`superadmin`) กดแล้วดาวน์โหลดไฟล์ PDF 1 หน้า ของคำร้องนั้นได้ทันที
 
@@ -18,18 +18,18 @@
 - Modify: `package.json`
 - Modify: `package-lock.json`
 
-- [ ] **Step 1: ติดตั้ง dependency**
+- [x] **Step 1: ติดตั้ง dependency**
 
 Run: `npm install @react-pdf/renderer@^4.9.0`
 
 Expected: `package.json` มีบรรทัดใหม่ใน `"dependencies"`: `"@react-pdf/renderer": "^4.9.0"` และ `package-lock.json` ถูกอัปเดต ไม่มี error
 
-- [ ] **Step 2: ตรวจสอบว่าไม่กระทบ dependency เดิม**
+- [x] **Step 2: ตรวจสอบว่าไม่กระทบ dependency เดิม**
 
 Run: `git diff package.json`
 Expected: มีแค่ 1 บรรทัดใหม่เพิ่มใน `dependencies`, ไม่มีบรรทัดอื่นถูกลบ/เปลี่ยน
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add package.json package-lock.json
@@ -46,7 +46,7 @@ git commit -m "chore: add @react-pdf/renderer for complaint PDF export"
 - Create: `public/fonts/Sarabun-Regular.ttf`
 - Create: `public/fonts/Sarabun-Bold.ttf`
 
-- [ ] **Step 1: สร้างโฟลเดอร์และดาวน์โหลดฟอนต์**
+- [x] **Step 1: สร้างโฟลเดอร์และดาวน์โหลดฟอนต์**
 
 Run:
 ```bash
@@ -57,7 +57,7 @@ curl -fsSL -o public/fonts/Sarabun-Bold.ttf "https://github.com/google/fonts/raw
 
 Expected: ทั้ง 2 คำสั่งจบโดยไม่มี error (exit code 0)
 
-- [ ] **Step 2: ตรวจสอบไฟล์ที่ได้**
+- [x] **Step 2: ตรวจสอบไฟล์ที่ได้**
 
 Run: `file public/fonts/*.ttf`
 Expected output (ชื่อ font อาจมีรายละเอียดต่างเล็กน้อยแต่ต้องขึ้น "TrueType Font data" และ "Sarabun" ทั้งคู่):
@@ -68,7 +68,7 @@ public/fonts/Sarabun-Regular.ttf: TrueType Font data, ... Sarabun ...
 
 ถ้าไฟล์ไม่ใช่ TrueType (เช่นโดน redirect ไปหน้า HTML error) ให้ลบไฟล์แล้วรัน Step 1 ใหม่
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add public/fonts/Sarabun-Regular.ttf public/fonts/Sarabun-Bold.ttf
@@ -85,7 +85,7 @@ git commit -m "chore: add Sarabun Thai font for PDF export"
 - Create: `lib/osmStaticTile.js`
 - Test: `lib/osmStaticTile.test.js`
 
-- [ ] **Step 1: เขียน test ที่ fail ก่อน**
+- [x] **Step 1: เขียน test ที่ fail ก่อน**
 
 สร้างไฟล์ `lib/osmStaticTile.test.js`:
 
@@ -116,12 +116,12 @@ test('ไม่ส่ง zoom มา -> ใช้ค่า default 16', () => {
 
 (ค่า `0.07630222222360317` และ `0.009918001891492167` คำนวณจากสูตร Web Mercator มาตรฐานตรงๆ สำหรับ lat=18.1458, lng=100.1408 ที่ zoom 16 — เป็น ground truth ของสูตร ไม่ใช่ค่าที่ได้จากการรันโค้ดที่จะเขียนใน Step 3)
 
-- [ ] **Step 2: รัน test เพื่อยืนยันว่า fail**
+- [x] **Step 2: รัน test เพื่อยืนยันว่า fail**
 
 Run: `node --test lib/osmStaticTile.test.js`
 Expected: FAIL — `Cannot find module './osmStaticTile.js'` หรือ `getStaticMapTile is not a function`
 
-- [ ] **Step 3: เขียน implementation**
+- [x] **Step 3: เขียน implementation**
 
 สร้างไฟล์ `lib/osmStaticTile.js`:
 
@@ -147,12 +147,12 @@ export function getStaticMapTile(lat, lng, zoom = DEFAULT_ZOOM) {
 }
 ```
 
-- [ ] **Step 4: รัน test เพื่อยืนยันว่า pass**
+- [x] **Step 4: รัน test เพื่อยืนยันว่า pass**
 
 Run: `node --test lib/osmStaticTile.test.js`
 Expected: `pass 3`, `fail 0`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/osmStaticTile.js lib/osmStaticTile.test.js
@@ -168,7 +168,7 @@ React component ที่ export `<Document>` ของ `@react-pdf/renderer` �
 **Files:**
 - Create: `components/pdf/ComplaintPdfDocument.js`
 
-- [ ] **Step 1: สร้างไฟล์**
+- [x] **Step 1: สร้างไฟล์**
 
 ```jsx
 import {
@@ -430,14 +430,14 @@ export default function ComplaintPdfDocument({ complaint, mapTile }) {
 }
 ```
 
-- [ ] **Step 2: ตรวจไวยากรณ์เบื้องต้น**
+- [x] **Step 2: ตรวจไวยากรณ์เบื้องต้น**
 
 Run: `npx eslint components/pdf/ComplaintPdfDocument.js`
 Expected: ไม่มี error (warning เรื่อง prop-types หรือ unused var ถ้ามีให้แก้ตามที่ eslint แจ้ง)
 
 หน้านี้จะถูกตรวจสอบแบบ end-to-end จริงใน Task 6 (ยังไม่มี test framework สำหรับ render component ใน repo นี้ — ดู Task 6)
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add components/pdf/ComplaintPdfDocument.js
@@ -451,7 +451,7 @@ git commit -m "feat: add ComplaintPdfDocument PDF layout component"
 **Files:**
 - Modify: `components/CardModalDetail.js`
 
-- [ ] **Step 1: เพิ่ม import ที่จำเป็น**
+- [x] **Step 1: เพิ่ม import ที่จำเป็น**
 
 ไฟล์ `components/CardModalDetail.js` บรรทัด 1-12 ปัจจุบัน:
 
@@ -491,7 +491,7 @@ import ComplaintPdfDocument from "./pdf/ComplaintPdfDocument";
 import { getStaticMapTile } from "@/lib/osmStaticTile";
 ```
 
-- [ ] **Step 2: เพิ่ม state และตัวแปร role**
+- [x] **Step 2: เพิ่ม state และตัวแปร role**
 
 บรรทัดปัจจุบัน (ประมาณบรรทัด 18-22):
 
@@ -519,7 +519,7 @@ import { getStaticMapTile } from "@/lib/osmStaticTile";
 
 (`isAdmin` ยังต้องเก็บไว้ — ใช้สำหรับ logic เบลอรูปภาพที่มีอยู่แล้วในไฟล์นี้ ไม่เกี่ยวกับปุ่มพิมพ์)
 
-- [ ] **Step 3: เพิ่มฟังก์ชัน `handlePrintPdf`**
+- [x] **Step 3: เพิ่มฟังก์ชัน `handlePrintPdf`**
 
 เพิ่มฟังก์ชันนี้ต่อจาก `useEffect` ตัวสุดท้าย ก่อน `if (!modalData ...) return null;`:
 
@@ -556,7 +556,7 @@ import { getStaticMapTile } from "@/lib/osmStaticTile";
   };
 ```
 
-- [ ] **Step 4: ต่อปุ่มเข้ากับ UI**
+- [x] **Step 4: ต่อปุ่มเข้ากับ UI**
 
 บรรทัดปัจจุบัน (ประมาณบรรทัด 144-149):
 
@@ -591,12 +591,12 @@ import { getStaticMapTile } from "@/lib/osmStaticTile";
           </div>
 ```
 
-- [ ] **Step 5: Lint check**
+- [x] **Step 5: Lint check**
 
 Run: `npx eslint components/CardModalDetail.js`
 Expected: ไม่มี error
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add components/CardModalDetail.js
@@ -609,37 +609,53 @@ git commit -m "feat: add staff-only PDF print button to complaint detail view"
 
 **Files:** ไม่มีไฟล์ใหม่ — เป็นขั้นตอนตรวจสอบ
 
-- [ ] **Step 1: เริ่ม dev server**
+- [x] **Step 1: เริ่ม dev server**
 
 Run: `npm run dev`
 Expected: เซิร์ฟเวอร์รันที่ `http://localhost:3000` ไม่มี error ใน terminal
 
-- [ ] **Step 2: ตรวจสอบด้วยบัญชี role `admin`**
+- [ ] **Step 2: ตรวจสอบด้วยบัญชี role `admin`** (ยังไม่ทำ — ต้อง login Clerk จริง รอผู้ใช้ตรวจเอง)
 
 เปิด `http://localhost:3000/admin/manage-complaints` (หรือหน้าที่เปิด `CardModalDetail` ได้ เช่น `/admin/map-view`) ด้วยบัญชีที่ `publicMetadata.role === "admin"`:
 - เปิดคำร้องที่**มีพิกัด**และ**มีรูปภาพ 4 รูปขึ้นไป** → กดปุ่ม `ReceiptText` → ปุ่มต้องเปลี่ยนเป็นไอคอนหมุน (`Loader2`) ชั่วครู่ → ไฟล์ `<complaintId>.pdf` ต้องถูกดาวน์โหลด
 - เปิดไฟล์ PDF ที่ได้ ตรวจว่า: ข้อความภาษาไทยแสดงถูกต้อง (ไม่ใช่กล่องเปล่า/เครื่องหมายคำถาม), แผนที่มีจุดพินแสดงอยู่, รูปภาพแสดงแค่ 4 รูปแรก, มีช่องลงชื่อ 2 ช่องด้านล่าง
 - เทียบตำแหน่งพิกัดในแผนที่กับลิงก์ Google Maps ที่มีอยู่แล้วในปุ่ม dropdown ของ `pages/admin/manage-complaints.jsx` (เพื่อยืนยันว่าพินอยู่ตำแหน่งที่ถูกต้องจริง ไม่ใช่สุ่ม)
 
-- [ ] **Step 2b: ตรวจสอบด้วยบัญชี role `superadmin`**
+- [ ] **Step 2b: ตรวจสอบด้วยบัญชี role `superadmin`** (ยังไม่ทำ — ต้อง login Clerk จริง รอผู้ใช้ตรวจเอง)
 
 ล็อกอินด้วยบัญชีที่ `publicMetadata.role === "superadmin"` แล้วเปิด `CardModalDetail` ของคำร้องใดก็ได้ → ปุ่มพิมพ์ PDF **ต้องแสดง** และกดดาวน์โหลดได้เหมือน role `admin` (นี่คือจุดที่แก้ไขจาก bug เดิมที่ `isAdmin` เช็กแค่ `"admin"` เพียงอย่างเดียว ถ้าไม่เช็กจุดนี้จะไม่รู้ว่าแก้ครบ)
 
-- [ ] **Step 3: ตรวจสอบ edge cases**
+- [x] **Step 3: ตรวจสอบ edge cases**
 
 - เปิดคำร้องที่**ไม่มีพิกัด** (`location.lat`/`location.lng` เป็น `undefined`) → กดพิมพ์ → PDF ต้องสร้างสำเร็จ และช่องแผนที่ต้องแสดงกล่อง "ไม่มีข้อมูลพิกัด" แทน ไม่ error
 - เปิดคำร้องที่**ไม่มีรูปภาพ** → PDF ต้องสร้างสำเร็จ ไม่มีส่วน "รูปภาพประกอบ" แสดงค้างเป็นช่องว่าง
 - เปิดคำร้องที่มี `patientName` (เช่นเคสขอรถรับ-ส่งโรงพยาบาล) → PDF ต้องมีช่อง "ชื่อผู้ป่วย" เพิ่มขึ้นมา
 
-- [ ] **Step 4: ตรวจสอบการจำกัด role**
+- [ ] **Step 4: ตรวจสอบการจำกัด role** (ยังไม่ทำ — ต้อง login Clerk จริง รอผู้ใช้ตรวจเอง)
 
 ล็อกอินด้วยบัญชีที่ `publicMetadata.role` เป็น `"user"` (หรือไม่มี role) แล้วเปิดหน้า `/status` หรือ `/complaint/[id_card]` ที่แสดง `CardModalDetail` ของคำร้องตัวเอง → ปุ่มพิมพ์ PDF (ไอคอน `ReceiptText`) **ต้องไม่แสดง** เลย
 
-- [ ] **Step 5: ตรวจสอบ console**
+- [ ] **Step 5: ตรวจสอบ console** (ยังไม่ทำ — ต้องเปิด browser จริงระหว่าง Step 2/2b/4 รอผู้ใช้ตรวจเอง)
 
 เปิด browser devtools console ระหว่างทำ Step 2-4 ทั้งหมด → ต้องไม่มี error สีแดงใน console (warning ของ react-pdf เรื่อง unsupported style property ถ้ามีให้บันทึกไว้แก้ แต่ไม่ควรมี uncaught exception)
 
-- [ ] **Step 6: Build check**
+- [x] **Step 6: Build check**
 
 Run: `npm run build`
 Expected: build สำเร็จไม่มี error (ตรวจว่า `@react-pdf/renderer` ไม่ทำให้ build พัง)
+
+---
+
+## Addendum: Task 7 (เพิ่มเติมหลัง final review)
+
+Final review แบบ whole-feature หลัง Task 1-6 พบ 3 ปัญหาที่ไม่เห็นตอนรีวิวทีละ task:
+
+1. **ปุ่มพิมพ์เข้าไม่ถึงจากหน้าที่เจ้าหน้าที่ใช้งานจริง** — `pages/admin/manage-complaints.jsx` ไม่ได้ render `CardModalDetail` เลย จึงไม่มีทางกดปุ่มพิมพ์จากหน้านี้ได้ → แก้โดยเพิ่มเมนู "พิมพ์ PDF" เข้าไปใน `ActionMenu` ของหน้านี้ตรงๆ (ใช้ logic เดียวกัน ผ่าน `lib/printComplaintPdf.js` ที่แยกออกมาใหม่)
+2. **แผนที่/รูปโหลดไม่สำเร็จแบบเงียบๆ** — `@react-pdf/renderer` กลืน error การโหลดรูปโดยไม่แจ้งเตือน → แก้โดยเช็ก OSM tile ก่อนจริง (`getVerifiedMapTile`, timeout 5s) ถ้าโหลดไม่ได้ให้ fallback เป็น placeholder "ไม่มีข้อมูลพิกัด" เหมือนไม่มีพิกัด (ส่วนรูปภาพจาก Cloudinary ยอมรับความเสี่ยงไว้ตามที่ตกลงกัน ไม่เช็กเพิ่ม)
+3. **Bundle ของหน้าประชาชนบวม** — `CardModalDetail.js` import `@react-pdf/renderer` แบบ static ทำให้หน้า `/status`, `/complaint` ที่ประชาชนเข้าใช้โหลด chunk ~700KB ไปด้วยทั้งที่มองไม่เห็นปุ่ม → แก้เป็น dynamic `import()` ข้างใน `handlePrintPdf` ทั้งที่ `CardModalDetail.js` และ `manage-complaints.jsx`
+
+พบและแก้ bug เพิ่มอีก 1 จุดระหว่างแก้ 3 ข้อบน: `numberOfLines` ไม่ใช่ prop จริงของ `@react-pdf/renderer` (ต้องใช้ `style={{ maxLines, textOverflow }}` แทน) ทำให้การจำกัดความยาว `detail` ที่ทำไว้ใน Task 4 ไม่ได้ผลจริง — แก้แล้วและยืนยันด้วยการเทียบขนาดไฟล์จริง
+
+ไฟล์ใหม่/แก้เพิ่มจาก Task 7: `lib/printComplaintPdf.js` (ใหม่), `lib/osmStaticTile.js` (+`getVerifiedMapTile`), `components/CardModalDetail.js`, `components/pdf/ComplaintPdfDocument.js`, `pages/admin/manage-complaints.jsx`
+
+**ยังเหลือให้ผู้ใช้ตรวจเอง:** Task 6 Step 2/2b/4/5 (ต้อง login Clerk จริงด้วย role admin/superadmin/user แล้วเปิดเบราว์เซอร์ดู)

@@ -1,5 +1,5 @@
 import { Dialog } from "@headlessui/react";
-import { ReceiptText } from "lucide-react";
+import { Loader2, ReceiptText } from "lucide-react";
 import { useMenuStore } from "@/stores/useMenuStore";
 import { useProblemOptionStore } from "@/stores/useProblemOptionStore";
 import { useEffect, useState } from "react";
@@ -18,8 +18,12 @@ export default function CardModalDetail({ modalData, onClose }) {
   const [categoryIcon, setCategoryIcon] = useState(null);
   const [previewImg, setPreviewImg] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const { user } = useUser();
   const isAdmin = user?.publicMetadata?.role === "admin";
+  const isStaff =
+    user?.publicMetadata?.role === "admin" ||
+    user?.publicMetadata?.role === "superadmin";
 
   useEffect(() => {
     fetchProblemOptions();
@@ -42,7 +46,18 @@ export default function CardModalDetail({ modalData, onClose }) {
   // console.log("🔍 CardModalDetail modalData:", modalData);
   // console.log("🔍 modalData._id:", modalData?._id);
   // console.log("🔍 modalData.complaintId:", modalData?.complaintId);
-  
+
+  const handlePrintPdf = async () => {
+    if (isGeneratingPdf) return;
+    setIsGeneratingPdf(true);
+    try {
+      const { printComplaintPdf } = await import("@/lib/printComplaintPdf");
+      await printComplaintPdf(modalData);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
   if (!modalData || !modalData.complaintId || !modalData.category) return null;
 
   return (
@@ -143,9 +158,20 @@ export default function CardModalDetail({ modalData, onClose }) {
           )}
           <div className="px-4 py-2 text-sm text-gray-600 font-semibold flex items-center gap-2 mt-2">
             {language === 'en' ? 'Complaint ID:' : 'เลขที่คำร้อง:'} <span className="text-black">{modalData.complaintId}</span>
-            <button className="ml-auto text-gray-500 hover:text-gray-700">
-              <ReceiptText size={18} />
-            </button>
+            {isStaff && (
+              <button
+                className="ml-auto text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                onClick={handlePrintPdf}
+                disabled={isGeneratingPdf}
+                title={language === 'en' ? 'Print PDF' : 'พิมพ์ PDF'}
+              >
+                {isGeneratingPdf ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : (
+                  <ReceiptText size={18} />
+                )}
+              </button>
+            )}
           </div>
           <div className="p-4 space-y-2">
             <div className="mb-3">
