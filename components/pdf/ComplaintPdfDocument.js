@@ -171,6 +171,9 @@ const styles = StyleSheet.create({
     height: 24,
     marginBottom: 4,
   },
+  signDate: {
+    marginTop: 14,
+  },
 });
 
 function formatThaiDate(dateValue) {
@@ -312,12 +315,12 @@ export default function ComplaintPdfDocument({ complaint, mapTiles }) {
           <View style={styles.signBox}>
             <View style={styles.signLine} />
             <Text>ผู้พิมพ์/รับเรื่อง</Text>
-            <Text>วันที่ ____________________</Text>
+            <Text style={styles.signDate}>วันที่ ____________________</Text>
           </View>
           <View style={styles.signBox}>
             <View style={styles.signLine} />
             <Text>ผู้บังคับบัญชา</Text>
-            <Text>วันที่ ____________________</Text>
+            <Text style={styles.signDate}>วันที่ ____________________</Text>
           </View>
         </View>
       </Page>
