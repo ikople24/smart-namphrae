@@ -49,10 +49,14 @@ Font.registerHyphenationCallback((word) => {
 const MAP_BOX_SIZE = 220;
 const MAX_PHOTOS = 4;
 const PIN_SIZE = 8;
+const PAGE_PADDING = 24;
+const PHOTO_GAP = 6;
+// A4 width in points minus the page padding on both sides.
+const CONTENT_WIDTH = 595.28 - PAGE_PADDING * 2;
 
 const styles = StyleSheet.create({
   page: {
-    padding: 24,
+    padding: PAGE_PADDING,
     fontFamily: "Sarabun",
     fontSize: 10,
     color: "#1f2937",
@@ -161,21 +165,15 @@ const styles = StyleSheet.create({
   // detail text, the report never spills the signature block onto page 2.
   photosRow: {
     flexDirection: "row",
-    gap: 6,
+    gap: PHOTO_GAP,
     marginBottom: 10,
   },
-  photo: {
-    objectFit: "cover",
+  photoFrame: {
+    backgroundColor: "#f3f4f6",
     borderWidth: 1,
     borderColor: "#d1d5db",
-  },
-  photoLarge: {
-    width: "48%",
-    height: 110,
-  },
-  photoSmall: {
-    width: "24%",
-    height: 95,
+    alignItems: "center",
+    justifyContent: "center",
   },
   signRow: {
     flexDirection: "row",
@@ -208,6 +206,16 @@ function formatThaiDate(dateValue) {
   });
 }
 
+// 1-2 photos share the row in halves, 3-4 in quarters; sizes are in points
+// because react-pdf's objectFit is only reliable with absolute dimensions.
+function getPhotoBox(count) {
+  const perRow = count > 2 ? 4 : 2;
+  return {
+    width: (CONTENT_WIDTH - PHOTO_GAP * (perRow - 1)) / perRow,
+    height: count > 2 ? 110 : 150,
+  };
+}
+
 function formatCoord(value) {
   const num = Number(value);
   return Number.isFinite(num) ? num.toFixed(6) : "-";
@@ -217,6 +225,7 @@ export default function ComplaintPdfDocument({ complaint, mapTiles }) {
   const photos = Array.isArray(complaint.images)
     ? complaint.images.slice(0, MAX_PHOTOS)
     : [];
+  const photoBox = getPhotoBox(photos.length);
   const problemsLabel = Array.isArray(complaint.problems)
     ? complaint.problems.join(", ")
     : "-";
@@ -328,15 +337,24 @@ export default function ComplaintPdfDocument({ complaint, mapTiles }) {
             <Text style={styles.sectionTitle}>รูปภาพประกอบ</Text>
             <View style={styles.photosRow}>
               {photos.map((src, idx) => (
-                <Image
+                <View
                   key={idx}
-                  src={src}
                   style={[
-                    styles.photo,
-                    photos.length > 2 ? styles.photoSmall : styles.photoLarge,
+                    styles.photoFrame,
+                    { width: photoBox.width, height: photoBox.height },
                   ]}
-                  alt=""
-                />
+                >
+                  {/* contain: show the whole photo scaled down, never crop or stretch */}
+                  <Image
+                    src={src}
+                    style={{
+                      width: photoBox.width - 2,
+                      height: photoBox.height - 2,
+                      objectFit: "contain",
+                    }}
+                    alt=""
+                  />
+                </View>
               ))}
             </View>
           </View>
