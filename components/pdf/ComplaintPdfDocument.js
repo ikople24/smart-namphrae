@@ -30,6 +30,22 @@ Font.register({
   ],
 });
 
+// Thai has no spaces between words, so react-pdf can only break a Thai
+// sentence at the few spaces it has and long lines run out of their box.
+// Give it Thai word boundaries as break points; the "" after each segment
+// tells react-pdf not to draw a hyphen when it breaks there.
+const thaiSegmenter =
+  typeof Intl !== "undefined" && Intl.Segmenter
+    ? new Intl.Segmenter("th", { granularity: "word" })
+    : null;
+
+Font.registerHyphenationCallback((word) => {
+  if (!thaiSegmenter || !/[฀-๿]/.test(word)) return [word];
+  return Array.from(thaiSegmenter.segment(word), (s) => s.segment).flatMap(
+    (segment) => [segment, ""]
+  );
+});
+
 const MAP_BOX_SIZE = 220;
 const MAX_PHOTOS = 4;
 const PIN_SIZE = 8;
@@ -141,18 +157,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ffffff",
   },
+  // Photos always sit in a single row so that, together with the capped
+  // detail text, the report never spills the signature block onto page 2.
   photosRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 6,
     marginBottom: 10,
   },
   photo: {
-    width: "48%",
-    height: 110,
     objectFit: "cover",
     borderWidth: 1,
     borderColor: "#d1d5db",
+  },
+  photoLarge: {
+    width: "48%",
+    height: 110,
+  },
+  photoSmall: {
+    width: "24%",
+    height: 95,
   },
   signRow: {
     flexDirection: "row",
@@ -248,7 +271,7 @@ export default function ComplaintPdfDocument({ complaint, mapTiles }) {
             </View>
             <View style={styles.field}>
               <Text style={styles.fieldLabel}>รายละเอียด</Text>
-              <Text style={{ maxLines: 6, textOverflow: "ellipsis" }}>
+              <Text style={{ maxLines: 12, textOverflow: "ellipsis" }}>
                 {complaint.detail || "-"}
               </Text>
             </View>
@@ -305,7 +328,15 @@ export default function ComplaintPdfDocument({ complaint, mapTiles }) {
             <Text style={styles.sectionTitle}>รูปภาพประกอบ</Text>
             <View style={styles.photosRow}>
               {photos.map((src, idx) => (
-                <Image key={idx} src={src} style={styles.photo} alt="" />
+                <Image
+                  key={idx}
+                  src={src}
+                  style={[
+                    styles.photo,
+                    photos.length > 2 ? styles.photoSmall : styles.photoLarge,
+                  ]}
+                  alt=""
+                />
               ))}
             </View>
           </View>
