@@ -148,7 +148,8 @@ export default async function handler(req, res) {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
-            "User-Agent": "Smart-Namphare-App/1.0"
+            "User-Agent": "Smart-Namphare-App/1.0",
+            "x-webhook-secret": process.env.N8N_WEBHOOK_SECRET || "",
           },
           body: JSON.stringify(webhookPayload),
           timeout: 10000, // 10 second timeout
